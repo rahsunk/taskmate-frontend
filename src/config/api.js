@@ -1,25 +1,38 @@
-// API Configuration
-export const API_CONFIG = {
-  BASE_URL: import.meta.env.DEV ? "/api" : "http://localhost:8000",
-  ENDPOINTS: {
-    SCHEDULE_GENERATOR: {
-      INITIALIZE_SCHEDULE: "ScheduleGenerator/initializeSchedule",
-      ADD_EVENT: "ScheduleGenerator/addEvent",
-      EDIT_EVENT: "ScheduleGenerator/editEvent",
-      DELETE_EVENT: "ScheduleGenerator/deleteEvent",
-      ADD_TASK: "ScheduleGenerator/addTask",
-      EDIT_TASK: "ScheduleGenerator/editTask",
-      DELETE_TASK: "ScheduleGenerator/deleteTask",
-      GENERATE_SCHEDULE: "ScheduleGenerator/generateSchedule",
-    },
-  },
-};
+import axios from "axios";
 
-// Helper function to get full API URL
-export const getApiUrl = (endpoint) => {
-  const baseUrl = API_CONFIG.BASE_URL.endsWith("/")
-    ? API_CONFIG.BASE_URL.slice(0, -1)
-    : API_CONFIG.BASE_URL;
-  const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
-  return `${baseUrl}${cleanEndpoint}`;
-};
+// Create axios instance with base configuration
+const apiClient = axios.create({
+  baseURL: "/api", // Vite proxy will forward to http://localhost:8000
+  timeout: 10000,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
+
+// Request interceptor for logging
+apiClient.interceptors.request.use(
+  (config) => {
+    console.log(
+      `Making ${config.method?.toUpperCase()} request to ${config.url}`
+    );
+    return config;
+  },
+  (error) => {
+    console.error("Request error:", error);
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor for error handling
+apiClient.interceptors.response.use(
+  (response) => {
+    console.log(`Response from ${response.config.url}:`, response.data);
+    return response;
+  },
+  (error) => {
+    console.error("Response error:", error.response?.data || error.message);
+    return Promise.reject(error);
+  }
+);
+
+export default apiClient;
