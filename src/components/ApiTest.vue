@@ -15,7 +15,12 @@
         />
         <button @click="registerUser" :disabled="loading">Register</button>
         <button @click="authenticateUser" :disabled="loading">Login</button>
-        <button @click="checkUserExists" :disabled="loading">Check User</button>
+      </div>
+      <div class="form-group">
+        <input v-model="authForm.userId" placeholder="User ID to check" />
+        <button @click="checkUserExists" :disabled="loading">
+          Check User Exists
+        </button>
       </div>
       <div v-if="authResult" class="result">
         <pre>{{ JSON.stringify(authResult, null, 2) }}</pre>
@@ -156,6 +161,7 @@ const scheduleResult = ref(null);
 const authForm = ref({
   username: "",
   password: "",
+  userId: "",
 });
 
 const sharingForm = ref({
@@ -218,7 +224,7 @@ const authenticateUser = async () => {
 
 const checkUserExists = async () => {
   authResult.value = await handleApiCall(() =>
-    userAuthService.checkUserExists(authForm.value.username)
+    userAuthService.checkUserExists(authForm.value.userId)
   );
 };
 
