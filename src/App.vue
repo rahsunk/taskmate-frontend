@@ -1,10 +1,10 @@
 <script setup>
-import ApiTest from "./components/ApiTest.vue";
+import AuthManager from "./components/auth/AuthManager.vue";
 </script>
 
 <template>
-  <div>
-    <ApiTest />
+  <div id="app">
+    <AuthManager />
   </div>
 </template>
 
@@ -20,5 +20,9 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  min-height: 100vh;
 }
 </style>
