@@ -164,7 +164,7 @@ export const scheduleGeneratorService = {
     }
   },
 
-  // Get schedule by owner
+  // Get schedule by owner (Backend uses POST for all endpoints)
   async getScheduleByOwner(owner) {
     try {
       const response = await apiClient.post(
@@ -179,7 +179,7 @@ export const scheduleGeneratorService = {
     }
   },
 
-  // Get events for schedule
+  // Get events for schedule (Backend uses POST for all endpoints)
   async getEventsForSchedule(schedule) {
     try {
       const response = await apiClient.post(
@@ -194,7 +194,7 @@ export const scheduleGeneratorService = {
     }
   },
 
-  // Get tasks for schedule
+  // Get tasks for schedule (Backend uses POST for all endpoints)
   async getTasksForSchedule(schedule) {
     try {
       const response = await apiClient.post(
@@ -209,7 +209,7 @@ export const scheduleGeneratorService = {
     }
   },
 
-  // Get event details
+  // Get event details (Backend uses POST for all endpoints)
   async getEventDetails(event) {
     try {
       const response = await apiClient.post(
@@ -226,7 +226,7 @@ export const scheduleGeneratorService = {
     }
   },
 
-  // Get task details
+  // Get task details (Backend uses POST for all endpoints)
   async getTaskDetails(task) {
     try {
       const response = await apiClient.post(
@@ -239,6 +239,68 @@ export const scheduleGeneratorService = {
     } catch (error) {
       throw new Error(
         error.response?.data?.error || "Failed to get task details"
+      );
+    }
+  },
+
+  // Get all schedules (Backend uses POST for all endpoints)
+  async getAllSchedules() {
+    try {
+      const response = await apiClient.post(
+        `${SCHEDULE_GENERATOR_BASE}/_getAllSchedules`,
+        {}
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.error || "Failed to get all schedules"
+      );
+    }
+  },
+
+  // Get schedule details (Backend uses POST for all endpoints)
+  async getScheduleDetails(schedule) {
+    try {
+      const response = await apiClient.post(
+        `${SCHEDULE_GENERATOR_BASE}/_getScheduleDetails`,
+        {
+          schedule,
+        }
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.error || "Failed to get schedule details"
+      );
+    }
+  },
+
+  // Get all events (Backend uses POST for all endpoints)
+  async getAllEvents() {
+    try {
+      const response = await apiClient.post(
+        `${SCHEDULE_GENERATOR_BASE}/_getAllEvents`,
+        {}
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.error || "Failed to get all events"
+      );
+    }
+  },
+
+  // Get all tasks (Backend uses POST for all endpoints)
+  async getAllTasks() {
+    try {
+      const response = await apiClient.post(
+        `${SCHEDULE_GENERATOR_BASE}/_getAllTasks`,
+        {}
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.error || "Failed to get all tasks"
       );
     }
   },

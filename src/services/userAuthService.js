@@ -107,15 +107,13 @@ export const userAuthService = {
     }
   },
 
-  // Get user by username
+  // Get user by username (Backend uses POST for all endpoints)
   async getUserByUsername(username) {
     try {
-      const response = await apiClient.get(
+      const response = await apiClient.post(
         `${USER_AUTH_BASE}/_getUserByUsername`,
         {
-          params: {
-            username,
-          },
+          username,
         }
       );
       return response.data;
@@ -124,15 +122,13 @@ export const userAuthService = {
     }
   },
 
-  // Check if user exists
+  // Check if user exists (Backend uses POST for all endpoints)
   async checkUserExists(user) {
     try {
-      const response = await apiClient.get(
+      const response = await apiClient.post(
         `${USER_AUTH_BASE}/_checkUserExists`,
         {
-          params: {
-            user,
-          },
+          user,
         }
       );
       return response.data;
@@ -143,20 +139,20 @@ export const userAuthService = {
     }
   },
 
-  // Get all users
+  // Get all users (Backend uses POST for all endpoints)
   async getUsers() {
     try {
-      const response = await apiClient.get(`${USER_AUTH_BASE}/users`);
+      const response = await apiClient.post(`${USER_AUTH_BASE}/users`, {});
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.error || "Failed to fetch users");
     }
   },
 
-  // Get user by ID
+  // Get user by ID (Backend uses POST for all endpoints)
   async getUserById(userId) {
     try {
-      const response = await apiClient.get(`${USER_AUTH_BASE}/users/${userId}`);
+      const response = await apiClient.post(`${USER_AUTH_BASE}/users/${userId}`, {});
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.error || "Failed to fetch user");
