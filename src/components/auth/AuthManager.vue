@@ -26,6 +26,13 @@
         <h1>TaskMate</h1>
         <div class="user-info">
           <span>Welcome, {{ currentUser }}!</span>
+          <button
+            v-if="currentView === 'schedule'"
+            @click="currentView = 'schedule-selection'"
+            class="schedules-button"
+          >
+            My Schedules
+          </button>
           <button @click="currentView = 'profile'" class="profile-button">
             Profile
           </button>
@@ -34,9 +41,20 @@
       </div>
 
       <div class="main-content">
-        <UserProfile v-if="currentView === 'profile'" @logout="handleLogout" />
+        <!-- Loading state while initializing schedule -->
+        <div v-if="currentView === 'loading'" class="loading-container">
+          <div class="spinner"></div>
+          <p>Setting up your schedule...</p>
+        </div>
 
-        <ScheduleManager v-else />
+        <UserProfile v-else-if="currentView === 'profile'" @logout="handleLogout" />
+
+        <ScheduleSelection
+          v-else-if="currentView === 'schedule-selection'"
+          @schedule-selected="handleScheduleSelected"
+        />
+
+        <ScheduleManager v-else-if="currentView === 'schedule'" />
       </div>
     </div>
   </div>
@@ -45,19 +63,79 @@
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
 import { useAuthStore } from "../../stores/authStore.js";
+import { useScheduleStore } from "../../stores/scheduleStore.js";
+import { scheduleGeneratorService } from "../../services/scheduleGeneratorService.js";
 import LoginForm from "./LoginForm.vue";
 import RegisterForm from "./RegisterForm.vue";
 import UserProfile from "./UserProfile.vue";
+import ScheduleSelection from "../schedule/ScheduleSelection.vue";
 import ScheduleManager from "../schedule/ScheduleManager.vue";
 
 const authStore = useAuthStore();
+const scheduleStore = useScheduleStore();
 
 const currentView = ref("login");
 
 const isAuthenticated = computed(() => authStore.isLoggedIn);
 const currentUser = computed(() => authStore.currentUser);
 
-const handleAuthSuccess = () => {
+// Initialize user schedule after login/register
+const initializeUserSchedule = async () => {
+  // Show loading state
+  currentView.value = "loading";
+
+  try {
+    // Check if user has any schedules
+    const scheduleResponse = await scheduleGeneratorService.getScheduleByOwner(
+      currentUser.value
+    );
+
+    if (scheduleResponse && scheduleResponse.schedule) {
+      // User has a schedule - load it and go to schedule manager
+      await scheduleStore.selectSchedule(scheduleResponse.schedule);
+      currentView.value = "schedule";
+    } else {
+      // No schedule found - show schedule selection to handle creation
+      currentView.value = "schedule-selection";
+    }
+  } catch (err) {
+    console.error("Error checking for schedules:", err);
+
+    // If error is "No schedule found", auto-create one
+    if (err.message && err.message.includes("No schedule found")) {
+      console.log("No schedules found, creating default schedule...");
+      try {
+        const createResponse = await scheduleGeneratorService.initializeSchedule(
+          currentUser.value
+        );
+
+        if (createResponse.schedule) {
+          console.log("Schedule created successfully:", createResponse.schedule);
+          // Auto-select the newly created schedule
+          await scheduleStore.selectSchedule(createResponse.schedule);
+          currentView.value = "schedule";
+        } else {
+          // Fall back to schedule selection screen
+          currentView.value = "schedule-selection";
+        }
+      } catch (createErr) {
+        console.error("Error creating schedule:", createErr);
+        currentView.value = "schedule-selection";
+      }
+    } else {
+      // Other error - show schedule selection
+      currentView.value = "schedule-selection";
+    }
+  }
+};
+
+const handleAuthSuccess = async () => {
+  // After successful login/register, check for schedules and auto-create if needed
+  await initializeUserSchedule();
+};
+
+const handleScheduleSelected = () => {
+  // After schedule is selected, show schedule manager
   currentView.value = "schedule";
 };
 
@@ -85,9 +163,9 @@ onMounted(async () => {
   // Initialize auth state from localStorage (now async for validation)
   await authStore.initializeAuth();
 
-  // If user is already authenticated, show schedule
+  // If user is already authenticated, check for schedules and auto-create if needed
   if (isAuthenticated.value) {
-    currentView.value = "schedule";
+    await initializeUserSchedule();
   }
 });
 </script>
@@ -164,6 +242,7 @@ onMounted(async () => {
   font-size: 1.1rem;
 }
 
+.schedules-button,
 .profile-button,
 .logout-button {
   padding: 0.5rem 1rem;
@@ -177,6 +256,7 @@ onMounted(async () => {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
+.schedules-button:hover,
 .profile-button:hover,
 .logout-button:hover {
   background: rgba(255, 255, 255, 0.25);
@@ -187,6 +267,40 @@ onMounted(async () => {
 .main-content {
   padding: 0;
   min-height: 100vh;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 3rem;
+  color: #666;
+}
+
+.loading-container p {
+  margin-top: 1.5rem;
+  font-size: 1.1rem;
+  color: #555;
+}
+
+.spinner {
+  width: 60px;
+  height: 60px;
+  border: 5px solid #f3f3f3;
+  border-top: 5px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @media (max-width: 768px) {
