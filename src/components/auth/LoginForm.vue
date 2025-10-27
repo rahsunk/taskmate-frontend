@@ -45,7 +45,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { useAuthStore } from "../../stores/authStore.js";
 
 const emit = defineEmits(["switch-to-register", "login-success"]);
@@ -57,16 +57,45 @@ const form = ref({
   password: "",
 });
 
+const localError = ref("");
+
 const loading = computed(() => authStore.isLoading);
-const error = computed(() => authStore.authError);
+const error = computed(() => authStore.authError || localError.value);
 
 const isFormValid = computed(() => {
   return form.value.username.trim() !== "" && form.value.password.trim() !== "";
 });
 
+// Clear local error when user types
+watch(
+  () => [form.value.username, form.value.password],
+  () => {
+    localError.value = "";
+    authStore.clearError();
+  }
+);
+
 const handleLogin = async () => {
+  // Clear previous errors
+  localError.value = "";
+  authStore.clearError();
+
+  // Frontend validation
+  if (!form.value.username.trim()) {
+    localError.value = "Please enter your username";
+    return;
+  }
+
+  if (!form.value.password) {
+    localError.value = "Please enter your password";
+    return;
+  }
+
   try {
     await authStore.login(form.value.username, form.value.password);
+    // Clear form on success
+    form.value.username = "";
+    form.value.password = "";
     emit("login-success");
   } catch (err) {
     // Error is handled by the store and displayed via computed property
@@ -76,6 +105,7 @@ const handleLogin = async () => {
 
 // Clear error when component mounts
 authStore.clearError();
+localError.value = "";
 </script>
 
 <style scoped>

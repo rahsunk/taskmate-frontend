@@ -1,5 +1,3 @@
-# API Specification: UserAuthentication Concept
-
 **Purpose:** limit access to known users and find users by name.
 
 ---
@@ -12,11 +10,11 @@
 
 **Requirements:**
 
-- no `User` with `username` exists.
+- No `User` with `username` already exists.
 
 **Effects:**
 
-- Create and return a new `User` with the given `username` and `password`.
+- Creates and returns a new `User` with the given `username` and `password`.
 
 **Request Body:**
 
@@ -51,7 +49,7 @@
 
 **Requirements:**
 
-- `User` with the same `username` and `password` exists.
+- A `User` with the same `username` and `password` exists.
 
 **Effects:**
 
@@ -90,7 +88,9 @@
 
 **Requirements:**
 
-- `user` exists and `user.password` is equal to `oldPassword`.
+- `user` exists.
+- `user.password` is equal to `oldPassword`.
+- `newPassword` must be different from `oldPassword`.
 
 **Effects:**
 
@@ -158,25 +158,21 @@
 
 ---
 
-### POST /api/UserAuthentication/\_getUserByUsername
+### GET /api/UserAuthentication/\_getUserByUsername
 
 **Description:** Returns the user ID associated with a username if found.
 
 **Requirements:**
 
-- N/A
+- None explicitly stated.
 
 **Effects:**
 
-- Returns the user ID associated with a username if found.
+- Returns the user ID if found, otherwise an empty object.
 
-**Request Body:**
+**Request Parameters:**
 
-```json
-{
-  "username": "string"
-}
-```
+- `username`: `string`
 
 **Success Response Body (Query):**
 
@@ -184,6 +180,44 @@
 [
   {
     "user": "string"
+  }
+]
+```
+
+_(Note: If no user is found, an empty array `[]` would be returned as per the general query rule, or an empty object `{}` as per the implementation's success case, which is then wrapped in an array for consistency with the prompt's query response body template.)_
+
+**Error Response Body:**
+
+```json
+{
+  "error": "string"
+}
+```
+
+---
+
+### GET /api/UserAuthentication/\_checkUserExists
+
+**Description:** Returns true if the user with the given ID exists, false otherwise.
+
+**Requirements:**
+
+- None.
+
+**Effects:**
+
+- Returns a boolean indicating if the user exists.
+
+**Request Parameters:**
+
+- `user`: `string` (User ID)
+
+**Success Response Body (Query):**
+
+```json
+[
+  {
+    "exists": "boolean"
   }
 ]
 ```
@@ -198,32 +232,68 @@
 
 ---
 
-### POST /api/UserAuthentication/\_checkUserExists
+### GET /api/UserAuthentication/users
 
-**Description:** Returns true if the user with the given ID exists, false otherwise.
+**Description:** Retrieves all user documents.
 
 **Requirements:**
 
-- N/A
+- None.
 
 **Effects:**
 
-- Returns true if the user with the given ID exists, false otherwise.
+- Returns an array of all `UsersDocument` objects.
 
-**Request Body:**
+**Request Parameters:**
 
-```json
-{
-  "user": "string"
-}
-```
+- None.
 
 **Success Response Body (Query):**
 
 ```json
 [
   {
-    "exists": "boolean"
+    "_id": "string",
+    "username": "string",
+    "password": "string"
+  }
+]
+```
+
+**Error Response Body:**
+
+```json
+{
+  "error": "string"
+}
+```
+
+---
+
+### GET /api/UserAuthentication/users/{userId}
+
+**Description:** Retrieves a specific user document by its ID.
+
+**Requirements:**
+
+- The `userId` exists.
+
+**Effects:**
+
+- Returns the `UsersDocument` object matching the provided ID.
+
+**Request Parameters:**
+
+- `userId`: `string` (User ID, part of URL path)
+
+**Success Response Body (Query):**
+
+```json
+[
+  {
+    "_id": "string",
+    "username": "string",
+    "password": "string"
   }
 ]
 ```

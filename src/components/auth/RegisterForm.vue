@@ -22,8 +22,32 @@
           type="password"
           required
           :disabled="loading"
-          placeholder="Choose a password"
+          placeholder="Choose a password (min. 6 characters)"
         />
+        <div
+          v-if="passwordStrength && form.password.length > 0"
+          class="password-hint"
+        >
+          <small
+            :class="{
+              'text-danger': passwordStrength.isWeak,
+              'text-warning': passwordStrength.isModerate,
+              'text-success': passwordStrength.isStrong,
+            }"
+          >
+            Password strength:
+            {{
+              passwordStrength.isStrong
+                ? "Strong"
+                : passwordStrength.isModerate
+                  ? "Moderate"
+                  : "Weak"
+            }}
+          </small>
+          <small v-if="passwordStrength.suggestions.length > 0" class="text-muted">
+            (Add: {{ passwordStrength.suggestions.join(", ") }})
+          </small>
+        </div>
       </div>
 
       <div class="form-group">
@@ -61,7 +85,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { useAuthStore } from "../../stores/authStore.js";
 
 const emit = defineEmits(["switch-to-login", "register-success"]);
@@ -74,8 +98,11 @@ const form = ref({
   confirmPassword: "",
 });
 
+const localError = ref("");
+const validationErrors = ref([]);
+
 const loading = computed(() => authStore.isLoading);
-const error = computed(() => authStore.authError);
+const error = computed(() => authStore.authError || localError.value);
 
 const passwordMismatch = computed(() => {
   return (
@@ -85,22 +112,87 @@ const passwordMismatch = computed(() => {
   );
 });
 
+const passwordStrength = computed(() => {
+  const password = form.value.password;
+  if (password.length === 0) return null;
+
+  const errors = [];
+  if (password.length < 6) errors.push("At least 6 characters");
+  if (!/[A-Z]/.test(password)) errors.push("One uppercase letter");
+  if (!/[a-z]/.test(password)) errors.push("One lowercase letter");
+  if (!/[0-9]/.test(password)) errors.push("One number");
+
+  return {
+    isWeak: errors.length > 2,
+    isModerate: errors.length === 1 || errors.length === 2,
+    isStrong: errors.length === 0,
+    suggestions: errors,
+  };
+});
+
 const isFormValid = computed(() => {
   return (
     form.value.username.trim() !== "" &&
     form.value.password.trim() !== "" &&
+    form.value.password.length >= 6 &&
     form.value.confirmPassword.trim() !== "" &&
     !passwordMismatch.value
   );
 });
 
+// Clear errors when user types
+watch(
+  () => [form.value.username, form.value.password, form.value.confirmPassword],
+  () => {
+    localError.value = "";
+    validationErrors.value = [];
+    authStore.clearError();
+  }
+);
+
 const handleRegister = async () => {
+  // Clear previous errors
+  localError.value = "";
+  validationErrors.value = [];
+  authStore.clearError();
+
+  // Frontend validation
+  if (!form.value.username.trim()) {
+    localError.value = "Please enter a username";
+    return;
+  }
+
+  if (form.value.username.trim().length < 3) {
+    localError.value = "Username must be at least 3 characters long";
+    return;
+  }
+
+  if (!form.value.password) {
+    localError.value = "Please enter a password";
+    return;
+  }
+
+  if (form.value.password.length < 6) {
+    localError.value = "Password must be at least 6 characters long";
+    return;
+  }
+
+  if (!form.value.confirmPassword) {
+    localError.value = "Please confirm your password";
+    return;
+  }
+
   if (passwordMismatch.value) {
+    localError.value = "Passwords do not match";
     return;
   }
 
   try {
     await authStore.register(form.value.username, form.value.password);
+    // Clear form on success
+    form.value.username = "";
+    form.value.password = "";
+    form.value.confirmPassword = "";
     emit("register-success");
   } catch (err) {
     // Error is handled by the store and displayed via computed property
@@ -110,6 +202,8 @@ const handleRegister = async () => {
 
 // Clear error when component mounts
 authStore.clearError();
+localError.value = "";
+validationErrors.value = [];
 </script>
 
 <style scoped>
@@ -202,5 +296,28 @@ button:disabled {
 
 .form-footer a:hover {
   text-decoration: underline;
+}
+
+.password-hint {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.text-danger {
+  color: #dc3545;
+}
+
+.text-warning {
+  color: #ffc107;
+}
+
+.text-success {
+  color: #28a745;
+}
+
+.text-muted {
+  color: #6c757d;
+  display: block;
+  margin-top: 0.25rem;
 }
 </style>
