@@ -176,9 +176,17 @@ const handleChangePassword = async () => {
 const handleDeleteAccount = async () => {
   try {
     await authStore.deleteAccount();
-    emit("logout");
+    // Show success message briefly before navigating to login
+    successMessage.value = "Account deleted successfully. Redirecting to login...";
+    showDeleteConfirmation.value = false;
+
+    // Small delay to show the success message, then navigate
+    setTimeout(() => {
+      emit("logout");
+    }, 1500);
   } catch (err) {
     console.error("Account deletion failed:", err);
+    showDeleteConfirmation.value = false;
   }
 };
 

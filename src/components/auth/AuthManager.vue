@@ -43,7 +43,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useAuthStore } from "../../stores/authStore.js";
 import LoginForm from "./LoginForm.vue";
 import RegisterForm from "./RegisterForm.vue";
@@ -63,12 +63,27 @@ const handleAuthSuccess = () => {
 
 const handleLogout = () => {
   authStore.logout();
+  // Ensure we reset to login view
   currentView.value = "login";
+
+  // Force a small delay to ensure state is fully updated
+  setTimeout(() => {
+    currentView.value = "login";
+  }, 100);
 };
 
-onMounted(() => {
-  // Initialize auth state from localStorage
-  authStore.initializeAuth();
+// Watch for authentication state changes
+// When user logs out or deletes account, immediately show login form
+watch(isAuthenticated, (newValue) => {
+  if (!newValue) {
+    // User is no longer authenticated, show login form
+    currentView.value = "login";
+  }
+});
+
+onMounted(async () => {
+  // Initialize auth state from localStorage (now async for validation)
+  await authStore.initializeAuth();
 
   // If user is already authenticated, show schedule
   if (isAuthenticated.value) {

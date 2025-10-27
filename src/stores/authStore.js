@@ -18,11 +18,39 @@ export const useAuthStore = defineStore("auth", {
 
   actions: {
     // Initialize auth state from localStorage
-    initializeAuth() {
+    async initializeAuth() {
       const savedUser = localStorage.getItem("user");
       if (savedUser) {
-        this.user = JSON.parse(savedUser);
-        this.isAuthenticated = true;
+        try {
+          const userData = JSON.parse(savedUser);
+
+          // Validate that we have a user ID
+          if (!userData || typeof userData !== "string" || userData.trim() === "") {
+            console.warn("Invalid user data in localStorage, clearing session");
+            this.logout();
+            return;
+          }
+
+          // Verify user still exists in the backend
+          try {
+            const checkResult = await userAuthService.checkUserExists(userData);
+            // API returns array with { exists: boolean }
+            if (Array.isArray(checkResult) && checkResult.length > 0 && checkResult[0]?.exists) {
+              this.user = userData;
+              this.isAuthenticated = true;
+            } else {
+              console.warn("User no longer exists in backend, clearing session");
+              this.logout();
+            }
+          } catch (error) {
+            // If we can't verify, clear the session to be safe
+            console.warn("Could not verify user session:", error.message);
+            this.logout();
+          }
+        } catch (error) {
+          console.error("Error parsing saved user data:", error);
+          this.logout();
+        }
       }
     },
 
@@ -32,7 +60,23 @@ export const useAuthStore = defineStore("auth", {
       this.error = null;
 
       try {
-        const response = await userAuthService.authenticate(username, password);
+        // Trim username to prevent whitespace issues
+        const trimmedUsername = username.trim();
+
+        if (!trimmedUsername) {
+          throw new Error("Username cannot be empty");
+        }
+        if (!password) {
+          throw new Error("Password cannot be empty");
+        }
+
+        const response = await userAuthService.authenticate(trimmedUsername, password);
+
+        // Validate response
+        if (!response || !response.user) {
+          throw new Error("Invalid authentication response from server");
+        }
+
         this.user = response.user;
         this.isAuthenticated = true;
 
@@ -42,6 +86,8 @@ export const useAuthStore = defineStore("auth", {
         return response;
       } catch (error) {
         this.error = error.message;
+        this.isAuthenticated = false;
+        this.user = null;
         throw error;
       } finally {
         this.loading = false;
@@ -54,7 +100,26 @@ export const useAuthStore = defineStore("auth", {
       this.error = null;
 
       try {
-        const response = await userAuthService.register(username, password);
+        // Trim username to prevent whitespace issues
+        const trimmedUsername = username.trim();
+
+        if (!trimmedUsername) {
+          throw new Error("Username cannot be empty");
+        }
+        if (!password) {
+          throw new Error("Password cannot be empty");
+        }
+        if (password.length < 6) {
+          throw new Error("Password must be at least 6 characters long");
+        }
+
+        const response = await userAuthService.register(trimmedUsername, password);
+
+        // Validate response
+        if (!response || !response.user) {
+          throw new Error("Invalid registration response from server");
+        }
+
         this.user = response.user;
         this.isAuthenticated = true;
 
@@ -64,6 +129,8 @@ export const useAuthStore = defineStore("auth", {
         return response;
       } catch (error) {
         this.error = error.message;
+        this.isAuthenticated = false;
+        this.user = null;
         throw error;
       } finally {
         this.loading = false;
