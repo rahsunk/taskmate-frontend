@@ -4,6 +4,7 @@ import { userAuthService } from "../services/userAuthService.js";
 export const useAuthStore = defineStore("auth", {
   state: () => ({
     user: null,
+    username: null,
     isAuthenticated: false,
     loading: false,
     error: null,
@@ -11,6 +12,7 @@ export const useAuthStore = defineStore("auth", {
 
   getters: {
     currentUser: (state) => state.user,
+    currentUsername: (state) => state.username,
     isLoggedIn: (state) => state.isAuthenticated,
     isLoading: (state) => state.loading,
     authError: (state) => state.error,
@@ -20,6 +22,7 @@ export const useAuthStore = defineStore("auth", {
     // Initialize auth state from localStorage
     async initializeAuth() {
       const savedUser = localStorage.getItem("user");
+      const savedUsername = localStorage.getItem("username");
       if (savedUser) {
         try {
           const userData = JSON.parse(savedUser);
@@ -37,6 +40,7 @@ export const useAuthStore = defineStore("auth", {
             // API returns array with { exists: boolean }
             if (Array.isArray(checkResult) && checkResult.length > 0 && checkResult[0]?.exists) {
               this.user = userData;
+              this.username = savedUsername ? JSON.parse(savedUsername) : null;
               this.isAuthenticated = true;
             } else {
               console.warn("User no longer exists in backend, clearing session");
@@ -78,16 +82,19 @@ export const useAuthStore = defineStore("auth", {
         }
 
         this.user = response.user;
+        this.username = trimmedUsername;
         this.isAuthenticated = true;
 
         // Save to localStorage
         localStorage.setItem("user", JSON.stringify(response.user));
+        localStorage.setItem("username", JSON.stringify(trimmedUsername));
 
         return response;
       } catch (error) {
         this.error = error.message;
         this.isAuthenticated = false;
         this.user = null;
+        this.username = null;
         throw error;
       } finally {
         this.loading = false;
@@ -121,16 +128,19 @@ export const useAuthStore = defineStore("auth", {
         }
 
         this.user = response.user;
+        this.username = trimmedUsername;
         this.isAuthenticated = true;
 
         // Save to localStorage
         localStorage.setItem("user", JSON.stringify(response.user));
+        localStorage.setItem("username", JSON.stringify(trimmedUsername));
 
         return response;
       } catch (error) {
         this.error = error.message;
         this.isAuthenticated = false;
         this.user = null;
+        this.username = null;
         throw error;
       } finally {
         this.loading = false;
@@ -185,9 +195,11 @@ export const useAuthStore = defineStore("auth", {
     // Logout user
     logout() {
       this.user = null;
+      this.username = null;
       this.isAuthenticated = false;
       this.error = null;
       localStorage.removeItem("user");
+      localStorage.removeItem("username");
     },
 
     // Clear error

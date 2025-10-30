@@ -356,7 +356,7 @@
 
 ---
 
-### GET /api/ScheduleGenerator/\_getScheduleByOwner
+### POST /api/ScheduleGenerator/\_getScheduleByOwner
 
 **Description:** Retrieves the ID of the schedule document associated with a given user owner.
 
@@ -368,9 +368,13 @@
 
 - Returns the schedule ID if found.
 
-**Request Parameters:**
+**Request Body:**
 
-- `owner`: `string` (User ID)
+```json
+{
+  "owner": "string"
+}
+```
 
 **Success Response Body (Query):**
 
@@ -392,7 +396,7 @@
 
 ---
 
-### GET /api/ScheduleGenerator/\_getEventsForSchedule
+### POST /api/ScheduleGenerator/\_getEventsForSchedule
 
 **Description:** Retrieves an array of Event IDs that are linked to the specified schedule.
 
@@ -404,16 +408,20 @@
 
 - Returns an array of event IDs.
 
-**Request Parameters:**
+**Request Body:**
 
-- `schedule`: `string` (Schedule ID)
+```json
+{
+  "schedule": "string"
+}
+```
 
 **Success Response Body (Query):**
 
 ```json
 [
   {
-    "event": ["string", "string"]
+    "event": "string"
   }
 ]
 ```
@@ -428,7 +436,7 @@
 
 ---
 
-### GET /api/ScheduleGenerator/\_getTasksForSchedule
+### POST /api/ScheduleGenerator/\_getTasksForSchedule
 
 **Description:** Retrieves an array of Task IDs that are linked to the specified schedule.
 
@@ -440,16 +448,20 @@
 
 - Returns an array of task IDs.
 
-**Request Parameters:**
+**Request Body:**
 
-- `schedule`: `string` (Schedule ID)
+```json
+{
+  "schedule": "string"
+}
+```
 
 **Success Response Body (Query):**
 
 ```json
 [
   {
-    "task": ["string", "string"]
+    "task": "string"
   }
 ]
 ```
@@ -464,7 +476,7 @@
 
 ---
 
-### GET /api/ScheduleGenerator/\_getEventDetails
+### POST /api/ScheduleGenerator/\_getEventDetails
 
 **Description:** Retrieves the full document details for a specific event.
 
@@ -474,11 +486,15 @@
 
 **Effects:**
 
-- Returns an array containing the event document.
+- Returns the event document.
 
-**Request Parameters:**
+**Request Body:**
 
-- `event`: `string` (Event ID)
+```json
+{
+  "event": "string"
+}
+```
 
 **Success Response Body (Query):**
 
@@ -511,7 +527,7 @@
 
 ---
 
-### GET /api/ScheduleGenerator/\_getTaskDetails
+### POST /api/ScheduleGenerator/\_getTaskDetails
 
 **Description:** Retrieves the full document details for a specific task.
 
@@ -521,11 +537,15 @@
 
 **Effects:**
 
-- Returns an array containing the task document.
+- Returns the task document.
 
-**Request Parameters:**
+**Request Body:**
 
-- `task`: `string` (Task ID)
+```json
+{
+  "task": "string"
+}
+```
 
 **Success Response Body (Query):**
 
@@ -556,34 +576,34 @@
 
 ---
 
-### GET /api/ScheduleGenerator/\_getAllSchedules
+### POST /api/ScheduleGenerator/\_getAllSchedules
 
 **Description:** Retrieves all schedule documents.
 
 **Requirements:**
 
-- None.
+- `true`
 
 **Effects:**
 
 - Returns an array of all `ScheduleDoc` objects.
 
-**Request Parameters:**
+**Request Body:**
 
-- None.
+```json
+{}
+```
 
 **Success Response Body (Query):**
 
 ```json
 [
   {
-    "schedule": [
-      {
-        "_id": "string",
-        "owner": "string",
-        "scheduleID": "number"
-      }
-    ]
+    "schedule": {
+      "_id": "string",
+      "owner": "string",
+      "scheduleID": "number"
+    }
   }
 ]
 ```
@@ -598,7 +618,7 @@
 
 ---
 
-### GET /api/ScheduleGenerator/\_getScheduleDetails
+### POST /api/ScheduleGenerator/\_getScheduleDetails
 
 **Description:** Retrieves a specific schedule document by its ID.
 
@@ -608,11 +628,15 @@
 
 **Effects:**
 
-- Returns an array containing the `ScheduleDoc` object matching the provided ID.
+- Returns the `ScheduleDoc` object matching the provided ID.
 
-**Request Parameters:**
+**Request Body:**
 
-- `schedule`: `string` (Schedule ID)
+```json
+{
+  "schedule": "string"
+}
+```
 
 **Success Response Body (Query):**
 
@@ -638,41 +662,41 @@
 
 ---
 
-### GET /api/ScheduleGenerator/\_getAllEvents
+### POST /api/ScheduleGenerator/\_getAllEvents
 
 **Description:** Retrieves all event documents.
 
 **Requirements:**
 
-- None.
+- `true`
 
 **Effects:**
 
 - Returns an array of all `EventDoc` objects.
 
-**Request Parameters:**
+**Request Body:**
 
-- None.
+```json
+{}
+```
 
 **Success Response Body (Query):**
 
 ```json
 [
   {
-    "event": [
-      {
-        "_id": "string",
-        "name": "string",
-        "eventID": "number",
-        "scheduleID": "number",
-        "startTime": "string (ISO Date)",
-        "endTime": "string (ISO Date)",
-        "repeat": {
-          "frequency": "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY",
-          "daysOfWeek"?: [0, 1, 2, 3, 4, 5, 6]
-        }
+    "event": {
+      "_id": "string",
+      "name": "string",
+      "eventID": "number",
+      "scheduleID": "number",
+      "startTime": "string (ISO Date)",
+      "endTime": "string (ISO Date)",
+      "repeat": {
+        "frequency": "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY",
+        "daysOfWeek"?: [0, 1, 2, 3, 4, 5, 6]
       }
-    ]
+    }
   }
 ]
 ```
@@ -687,39 +711,39 @@
 
 ---
 
-### GET /api/ScheduleGenerator/\_getAllTasks
+### POST /api/ScheduleGenerator/\_getAllTasks
 
 **Description:** Retrieves all task documents.
 
 **Requirements:**
 
-- None.
+- `true`
 
 **Effects:**
 
 - Returns an array of all `TaskDoc` objects.
 
-**Request Parameters:**
+**Request Body:**
 
-- None.
+```json
+{}
+```
 
 **Success Response Body (Query):**
 
 ```json
 [
   {
-    "task": [
-      {
-        "_id": "string",
-        "name": "string",
-        "taskID": "number",
-        "scheduleID": "number",
-        "deadline": "string (ISO Date)",
-        "expectedCompletionTime": "number",
-        "completionLevel": "number",
-        "priority": "number"
-      }
-    ]
+    "task": {
+      "_id": "string",
+      "name": "string",
+      "taskID": "number",
+      "scheduleID": "number",
+      "deadline": "string (ISO Date)",
+      "expectedCompletionTime": "number",
+      "completionLevel": "number",
+      "priority": "number"
+    }
   }
 ]
 ```
@@ -731,3 +755,5 @@
   "error": "string"
 }
 ```
+
+---

@@ -1,4 +1,4 @@
-**Purpose:** limit access to known users and find users by name.
+**Purpose:** identify and authenticate users.
 
 ---
 
@@ -10,11 +10,11 @@
 
 **Requirements:**
 
-- No `User` with `username` already exists.
+- No user with that `username` already exists.
 
 **Effects:**
 
-- Creates and returns a new `User` with the given `username` and `password`.
+- Creates a new `User` `u` with the given `username` and `password`; returns `u`.
 
 **Request Body:**
 
@@ -43,17 +43,18 @@
 
 ---
 
-### POST /api/UserAuthentication/authenticate
+### POST /api/UserAuthentication/login
 
-**Description:** Authenticates a user by checking if the provided username and password match an existing user.
+**Description:** Authenticates a user with a username and password, creating a new session if successful.
 
 **Requirements:**
 
-- A `User` with the same `username` and `password` exists.
+- A `User` with that `username` and `password` exists.
 
 **Effects:**
 
-- Grants access to the `User` associated with that `username` and `password`.
+- If successful, creates a new `Session` linked to the `User` and returns its `sessionID`.
+- Otherwise, returns an `error`.
 
 **Request Body:**
 
@@ -68,8 +69,44 @@
 
 ```json
 {
-  "user": "string"
+  "session": "string"
 }
+```
+
+**Error Response Body:**
+
+```json
+{
+  "error": "string"
+}
+```
+
+---
+
+### POST /api/UserAuthentication/logout
+
+**Description:** Deletes an existing user session, effectively logging out the user.
+
+**Requirements:**
+
+- `session` exists and is valid.
+
+**Effects:**
+
+- Deletes the `session`.
+
+**Request Body:**
+
+```json
+{
+  "session": "string"
+}
+```
+
+**Success Response Body (Action):**
+
+```json
+{}
 ```
 
 **Error Response Body:**
@@ -158,33 +195,38 @@
 
 ---
 
-### GET /api/UserAuthentication/\_getUserByUsername
+### POST /api/UserAuthentication/\_getUsers
 
-**Description:** Returns the user ID associated with a username if found.
+**Description:** Returns a list of all users with their IDs and usernames.
 
 **Requirements:**
 
-- None explicitly stated.
+- `true`
 
 **Effects:**
 
-- Returns the user ID if found, otherwise an empty object.
+- Returns a list of all users with their IDs and usernames.
 
-**Request Parameters:**
+**Request Body:**
 
-- `username`: `string`
+```json
+{}
+```
 
 **Success Response Body (Query):**
 
 ```json
 [
   {
-    "user": "string"
+    "user": [
+      {
+        "id": "string",
+        "username": "string"
+      }
+    ]
   }
 ]
 ```
-
-_(Note: If no user is found, an empty array `[]` would be returned as per the general query rule, or an empty object `{}` as per the implementation's success case, which is then wrapped in an array for consistency with the prompt's query response body template.)_
 
 **Error Response Body:**
 
@@ -196,21 +238,110 @@ _(Note: If no user is found, an empty array `[]` would be returned as per the ge
 
 ---
 
-### GET /api/UserAuthentication/\_checkUserExists
+### POST /api/UserAuthentication/\_getUserDetails
 
-**Description:** Returns true if the user with the given ID exists, false otherwise.
+**Description:** Returns the ID and username of a specific user. Password is not returned for security reasons.
 
 **Requirements:**
 
-- None.
+- `user` exists.
 
 **Effects:**
 
-- Returns a boolean indicating if the user exists.
+- Returns the ID and username of a specific user. Password is not returned for security reasons.
 
-**Request Parameters:**
+**Request Body:**
 
-- `user`: `string` (User ID)
+```json
+{
+  "user": "string"
+}
+```
+
+**Success Response Body (Query):**
+
+```json
+[
+  {
+    "userDetails": [
+      {
+        "id": "string",
+        "username": "string"
+      }
+    ]
+  }
+]
+```
+
+**Error Response Body:**
+
+```json
+{
+  "error": "string"
+}
+```
+
+---
+
+### POST /api/UserAuthentication/\_getUserByUsername
+
+**Description:** Returns the user ID associated with a username if found, as an array.
+
+**Requirements:**
+
+- `true`
+
+**Effects:**
+
+- Returns the user ID associated with a username if found, as an array.
+
+**Request Body:**
+
+```json
+{
+  "username": "string"
+}
+```
+
+**Success Response Body (Query):**
+
+```json
+[
+  {
+    "user": "string"
+  }
+]
+```
+
+**Error Response Body:**
+
+```json
+{
+  "error": "string"
+}
+```
+
+---
+
+### POST /api/UserAuthentication/\_checkUserExists
+
+**Description:** Returns true if the user with the given ID exists, false otherwise, as an array.
+
+**Requirements:**
+
+- `true`
+
+**Effects:**
+
+- Returns true if the user with the given ID exists, false otherwise, as an array.
+
+**Request Body:**
+
+```json
+{
+  "user": "string"
+}
+```
 
 **Success Response Body (Query):**
 
@@ -232,30 +363,38 @@ _(Note: If no user is found, an empty array `[]` would be returned as per the ge
 
 ---
 
-### GET /api/UserAuthentication/users
+### POST /api/UserAuthentication/\_getSessions
 
-**Description:** Retrieves all user documents.
+**Description:** Returns a list of all active sessions, including their ID, associated user ID, session string, creation and expiry times.
 
 **Requirements:**
 
-- None.
+- `true`
 
 **Effects:**
 
-- Returns an array of all `UsersDocument` objects.
+- Returns a list of all active sessions, including their ID, associated user ID, session string, creation and expiry times.
 
-**Request Parameters:**
+**Request Body:**
 
-- None.
+```json
+{}
+```
 
 **Success Response Body (Query):**
 
 ```json
 [
   {
-    "_id": "string",
-    "username": "string",
-    "password": "string"
+    "session": [
+      {
+        "id": "string",
+        "userId": "string",
+        "sessionID": "string",
+        "createdAt": "string (ISO Date)",
+        "expiresAt": "string (ISO Date)"
+      }
+    ]
   }
 ]
 ```
@@ -270,30 +409,40 @@ _(Note: If no user is found, an empty array `[]` would be returned as per the ge
 
 ---
 
-### GET /api/UserAuthentication/users/{userId}
+### POST /api/UserAuthentication/\_getSessionDetails
 
-**Description:** Retrieves a specific user document by its ID.
+**Description:** Returns the details of a specific session (ID, associated user ID, session string, creation and expiry times) or an empty array if not found.
 
 **Requirements:**
 
-- The `userId` exists.
+- `session` exists.
 
 **Effects:**
 
-- Returns the `UsersDocument` object matching the provided ID.
+- Returns the details of a specific session (ID, associated user ID, session string, creation and expiry times) or an empty array if not found.
 
-**Request Parameters:**
+**Request Body:**
 
-- `userId`: `string` (User ID, part of URL path)
+```json
+{
+  "session": "string"
+}
+```
 
 **Success Response Body (Query):**
 
 ```json
 [
   {
-    "_id": "string",
-    "username": "string",
-    "password": "string"
+    "sessionDetails": [
+      {
+        "id": "string",
+        "userId": "string",
+        "sessionID": "string",
+        "createdAt": "string (ISO Date)",
+        "expiresAt": "string (ISO Date)"
+      }
+    ]
   }
 ]
 ```
@@ -305,3 +454,5 @@ _(Note: If no user is found, an empty array `[]` would be returned as per the ge
   "error": "string"
 }
 ```
+
+---
