@@ -128,7 +128,7 @@ const passwordForm = ref({
 const showDeleteConfirmation = ref(false);
 const successMessage = ref("");
 
-const user = computed(() => authStore.currentUser);
+const user = computed(() => authStore.currentUsername);
 const loading = computed(() => authStore.isLoading);
 const error = computed(() => authStore.authError);
 

@@ -2,7 +2,7 @@
   <div class="auth-manager">
     <div v-if="!isAuthenticated" class="auth-container">
       <div class="auth-header">
-        <h1>TaskMate</h1>
+        <h1 @click="currentView = 'login'" class="logo-clickable">TaskMate</h1>
         <p>Welcome to TaskMate - Your Personal Task Management System</p>
       </div>
 
@@ -23,7 +23,7 @@
 
     <div v-else class="authenticated-container">
       <div class="app-header">
-        <h1>TaskMate</h1>
+        <h1 @click="currentView = 'schedule'" class="logo-clickable">TaskMate</h1>
         <div class="user-info">
           <span>Welcome, {{ username }}!</span>
           <button @click="currentView = 'profile'" class="profile-button">
@@ -166,6 +166,16 @@ onMounted(async () => {
 .app-header h1 {
   margin: 0;
   font-size: 2rem;
+}
+
+.logo-clickable {
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s;
+}
+
+.logo-clickable:hover {
+  opacity: 0.8;
+  transform: scale(1.02);
 }
 
 .user-info {
