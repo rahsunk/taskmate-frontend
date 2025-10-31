@@ -262,7 +262,7 @@ onMounted(() => {
   padding: 0.75rem 1.5rem;
   border: 2px solid rgba(255, 255, 255, 0.4);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.15);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   cursor: pointer;
   transition: all 0.2s;
@@ -272,13 +272,14 @@ onMounted(() => {
 }
 
 .view-button:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  filter: brightness(1.5);
   border-color: rgba(255, 255, 255, 0.6);
   transform: translateY(-1px);
 }
 
 .view-button.active {
-  background: rgba(255, 255, 255, 0.35);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-color: rgba(255, 255, 255, 0.8);
   font-weight: 600;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
@@ -307,7 +308,7 @@ onMounted(() => {
 .generate-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
-  background: rgba(255, 255, 255, 0.15);
+  background: gray;
   border-color: rgba(255, 255, 255, 0.2);
 }
 
@@ -316,7 +317,7 @@ onMounted(() => {
 }
 
 .schedule-content {
-  max-width: 1400px;
+  max-width: 1800px;
   margin: 0 auto;
 }
 

@@ -80,16 +80,19 @@ onMounted(() => {
 <style scoped>
 .auth-manager {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  width: 90vw;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
 }
 
 .auth-container {
   width: 100%;
-  max-width: 500px;
+  max-width: 50vw;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 4rem;
+  border-radius: 12px;
 }
 
 .auth-header {
@@ -110,9 +113,6 @@ onMounted(() => {
 }
 
 .auth-forms {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   overflow: hidden;
 }
 
@@ -175,9 +175,9 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
-  .auth-manager {
+  /* .auth-manager {
     padding: 1rem;
-  }
+  } */
 
   .app-header {
     flex-direction: column;

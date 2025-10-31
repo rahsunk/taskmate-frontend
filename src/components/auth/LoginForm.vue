@@ -110,7 +110,7 @@ localError.value = "";
 
 <style scoped>
 .login-form {
-  max-width: 400px;
+  width: 30vw;
   margin: 0 auto;
   padding: 2rem;
   border: 1px solid #ddd;

@@ -285,7 +285,7 @@ const getItemTooltip = (item) => {
 
 .schedule-grid {
   display: grid;
-  grid-template-columns: 80px repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: 80px repeat(auto-fit, minmax(50px, 1fr));
   gap: 1px;
   background: #e9ecef;
   border-radius: 8px;

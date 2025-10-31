@@ -156,7 +156,7 @@ const deleteEvent = (event) => {
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #667eea 0%, #0837f5 100%);
   color: white;
 }
 
