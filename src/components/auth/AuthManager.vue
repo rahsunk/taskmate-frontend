@@ -44,9 +44,19 @@
       <div class="main-content">
         <UserProfile v-if="currentView === 'profile'" @logout="handleLogout" />
 
-        <FriendsManager v-else-if="currentView === 'friends'" />
+        <FriendsManager
+          v-else-if="currentView === 'friends'"
+          @open-messaging="showMessaging = true"
+        />
 
         <ScheduleManager v-else />
+      </div>
+
+      <!-- Messaging Panel Overlay -->
+      <div v-if="showMessaging" class="messaging-overlay" @click="closeMessaging">
+        <div class="messaging-container" @click.stop>
+          <MessagingPanel @close="closeMessaging" />
+        </div>
       </div>
     </div>
   </div>
@@ -61,11 +71,13 @@ import RegisterForm from "./RegisterForm.vue";
 import UserProfile from "./UserProfile.vue";
 import ScheduleManager from "../schedule/ScheduleManager.vue";
 import FriendsManager from "../friends/FriendsManager.vue";
+import MessagingPanel from "../messaging/MessagingPanel.vue";
 
 const authStore = useAuthStore();
 const scheduleStore = useScheduleStore();
 
 const currentView = ref("login");
+const showMessaging = ref(false);
 
 const isAuthenticated = computed(() => authStore.isLoggedIn);
 const username = computed(() => authStore.currentUsername);
@@ -101,6 +113,10 @@ const handleAuthSuccess = async () => {
 const handleLogout = () => {
   authStore.logout();
   currentView.value = "login";
+};
+
+const closeMessaging = () => {
+  showMessaging.value = false;
 };
 
 onMounted(async () => {
@@ -230,6 +246,39 @@ onMounted(async () => {
   min-height: 100vh;
 }
 
+.messaging-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 2rem;
+}
+
+.messaging-container {
+  width: 100%;
+  max-width: 900px;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 768px) {
   /* .auth-manager {
     padding: 1rem;
@@ -248,6 +297,14 @@ onMounted(async () => {
 
   .main-content {
     padding: 0;
+  }
+
+  .messaging-overlay {
+    padding: 1rem;
+  }
+
+  .messaging-container {
+    max-height: 95vh;
   }
 }
 </style>

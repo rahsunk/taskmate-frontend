@@ -192,10 +192,7 @@ const handleSubmit = async () => {
     console.log("Form data:", form.value);
 
     if (isEditing.value) {
-      await scheduleStore.editTask(
-        props.taskToEdit.id,
-        form.value
-      );
+      await scheduleStore.editTask(props.taskToEdit.id, form.value);
       emit("task-updated");
     } else {
       const newTask = await scheduleStore.addTask(form.value);

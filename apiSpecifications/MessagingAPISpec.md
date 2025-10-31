@@ -102,7 +102,7 @@
 
 **Requirements:**
 
-- A conversation with the given `conversationId` exists.
+- A the given `conversationId` exists.
 
 **Effects:**
 

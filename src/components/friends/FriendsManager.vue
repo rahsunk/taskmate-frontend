@@ -75,12 +75,20 @@
                 <div class="user-label">Friend</div>
               </div>
             </div>
-            <button
-              @click="handleRemoveFriend(friend)"
-              class="button remove-button"
-            >
-              Remove
-            </button>
+            <div class="button-group">
+              <button
+                @click="handleMessageFriend(friend)"
+                class="button message-button"
+              >
+                Message
+              </button>
+              <button
+                @click="handleRemoveFriend(friend)"
+                class="button remove-button"
+              >
+                Remove
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -197,9 +205,13 @@
 import { ref, computed, onMounted } from "vue";
 import { useFriendStore } from "../../stores/friendStore.js";
 import { useAuthStore } from "../../stores/authStore.js";
+import { useMessagingStore } from "../../stores/messagingStore.js";
 
 const friendStore = useFriendStore();
 const authStore = useAuthStore();
+const messagingStore = useMessagingStore();
+
+const emit = defineEmits(["open-messaging"]);
 
 const activeTab = ref("friends");
 const newFriendUsername = ref("");
@@ -311,6 +323,34 @@ const handleRemoveFriend = async (friendship) => {
     showSuccess("Friend removed");
   } catch (error) {
     console.error("Failed to remove friend:", error);
+  } finally {
+    isProcessing.value = false;
+  }
+};
+
+// Handle messaging a friend
+const handleMessageFriend = async (friendship) => {
+  if (isProcessing.value) return;
+  isProcessing.value = true;
+
+  try {
+    // Get the friend's user ID
+    const friendUserId =
+      friendship.user1 === currentUser.value
+        ? friendship.user2
+        : friendship.user1;
+
+    // Create or get conversation
+    await messagingStore.createOrGetConversation(
+      currentUser.value,
+      friendUserId
+    );
+
+    // Emit event to parent to open messaging panel
+    emit("open-messaging");
+  } catch (error) {
+    console.error("Failed to open conversation:", error);
+    friendStore.error = "Failed to open conversation";
   } finally {
     isProcessing.value = false;
   }
@@ -569,6 +609,15 @@ const clearError = () => {
 .decline-button:hover:not(:disabled),
 .cancel-button:hover:not(:disabled) {
   background: #5a6268;
+}
+
+.message-button {
+  background: #667eea;
+  color: white;
+}
+
+.message-button:hover:not(:disabled) {
+  background: #5568d3;
 }
 
 .remove-button {
