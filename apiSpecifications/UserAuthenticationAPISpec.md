@@ -323,6 +323,81 @@
 
 ---
 
+### POST /api/UserAuthentication/users/{userId}
+
+**Description:** Returns the user details (ID and username) for a specific user ID.
+
+**Requirements:**
+
+- `userId` exists.
+
+**Effects:**
+
+- Returns the user object with `_id` and `username` fields.
+
+**Request Body:**
+
+```json
+{}
+```
+
+**Success Response Body (Query):**
+
+```json
+{
+  "_id": "string",
+  "username": "string"
+}
+```
+
+**Error Response Body:**
+
+```json
+{
+  "error": "string"
+}
+```
+
+---
+
+### POST /api/UserAuthentication/\_getUsernameById
+
+**Description:** Returns the username for a specific user ID.
+
+**Requirements:**
+
+- `user` (user ID) exists.
+
+**Effects:**
+
+- Returns the username associated with the given user ID.
+
+**Request Body:**
+
+```json
+{
+  "user": "string"
+}
+```
+
+**Success Response Body (Query):**
+
+```json
+{
+  "username": "string"
+}
+```
+
+**Error Response Body:**
+
+```json
+{
+  "error": "string"
+}
+```
+
+---
+
 ### POST /api/UserAuthentication/\_checkUserExists
 
 **Description:** Returns true if the user with the given ID exists, false otherwise, as an array.

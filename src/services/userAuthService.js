@@ -152,10 +152,30 @@ export const userAuthService = {
   // Get user by ID (Backend uses POST for all endpoints)
   async getUserById(userId) {
     try {
-      const response = await apiClient.post(`${USER_AUTH_BASE}/users/${userId}`, {});
+      const response = await apiClient.post(
+        `${USER_AUTH_BASE}/users/${userId}`,
+        {}
+      );
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.error || "Failed to fetch user");
+    }
+  },
+
+  // Get username from user ID
+  async getUsernameById(userId) {
+    try {
+      const response = await apiClient.post(
+        `${USER_AUTH_BASE}/_getUsernameById`,
+        {
+          user: userId,
+        }
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.error || "Failed to fetch username"
+      );
     }
   },
 };

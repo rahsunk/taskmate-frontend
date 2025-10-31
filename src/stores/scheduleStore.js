@@ -109,7 +109,6 @@ export const useScheduleStore = defineStore("schedule", {
           await scheduleGeneratorService.getTasksForSchedule(this.scheduleId);
 
         console.log("Tasks response:", tasksResponse);
-        // console.log("BRUH");
         // console.log(tasksResponse);
 
         // Fetch full details for each task
@@ -122,8 +121,7 @@ export const useScheduleStore = defineStore("schedule", {
           );
 
           const taskDetailsArray = await Promise.all(taskPromises);
-          console.log("HERE");
-          console.log(taskDetailsArray);
+          // console.log(taskDetailsArray);
 
           // Map task details to include id field for frontend
           this.tasks = taskDetailsArray.map((detail) => ({

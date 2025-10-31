@@ -23,9 +23,17 @@
 
     <div v-else class="authenticated-container">
       <div class="app-header">
-        <h1 @click="currentView = 'schedule'" class="logo-clickable">TaskMate</h1>
+        <h1 @click="currentView = 'schedule'" class="logo-clickable">
+          TaskMate
+        </h1>
         <div class="user-info">
           <span>Welcome, {{ username }}!</span>
+          <button @click="currentView = 'schedule'" class="nav-button">
+            Schedule
+          </button>
+          <button @click="currentView = 'friends'" class="nav-button">
+            Friends
+          </button>
           <button @click="currentView = 'profile'" class="profile-button">
             Profile
           </button>
@@ -35,6 +43,8 @@
 
       <div class="main-content">
         <UserProfile v-if="currentView === 'profile'" @logout="handleLogout" />
+
+        <FriendsManager v-else-if="currentView === 'friends'" />
 
         <ScheduleManager v-else />
       </div>
@@ -50,6 +60,7 @@ import LoginForm from "./LoginForm.vue";
 import RegisterForm from "./RegisterForm.vue";
 import UserProfile from "./UserProfile.vue";
 import ScheduleManager from "../schedule/ScheduleManager.vue";
+import FriendsManager from "../friends/FriendsManager.vue";
 
 const authStore = useAuthStore();
 const scheduleStore = useScheduleStore();
@@ -74,7 +85,10 @@ const handleAuthSuccess = async () => {
   try {
     console.log("Initializing schedule for user:", currentUser.value);
     await scheduleStore.initializeSchedule(currentUser.value);
-    console.log("Schedule initialized successfully, scheduleId:", scheduleStore.scheduleId);
+    console.log(
+      "Schedule initialized successfully, scheduleId:",
+      scheduleStore.scheduleId
+    );
     currentView.value = "schedule";
   } catch (error) {
     console.error("Error initializing schedule:", error);
@@ -188,6 +202,7 @@ onMounted(async () => {
   font-size: 1.1rem;
 }
 
+.nav-button,
 .profile-button,
 .logout-button {
   padding: 0.5rem 1rem;
@@ -201,6 +216,7 @@ onMounted(async () => {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
+.nav-button:hover,
 .profile-button:hover,
 .logout-button:hover {
   background: rgba(255, 255, 255, 0.25);
@@ -209,6 +225,7 @@ onMounted(async () => {
 }
 
 .main-content {
+  margin-top: 5vh;
   padding: 0;
   min-height: 100vh;
 }
