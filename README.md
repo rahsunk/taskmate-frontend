@@ -1,7 +1,9 @@
 # 6.1040 Assignment 4b Final Submission
 
-Deliverables are located [here](deliverables/final).
+## Deliverables:
 
-This includes the visual design study and updated screen recording and user journey.
+- [Visual design study](deliverables/final/visualDesignStudy/visualDesignStudy.pdf)
+- [Updated user journey](deliverables/final/updatedUserJourney.md)
+- [Updated screen recording (on YouTube)](https://www.youtube.com/watch?v=BPQrUFo13IM)
 
 For the updated design document, see the backend repository.
