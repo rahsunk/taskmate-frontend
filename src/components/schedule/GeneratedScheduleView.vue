@@ -104,8 +104,8 @@ import { useScheduleStore } from "../../stores/scheduleStore.js";
 const scheduleStore = useScheduleStore();
 
 const activeHours = computed(() => {
-  // 9 AM to 6 PM (9 to 18 in 24-hour format)
-  return Array.from({ length: 10 }, (_, i) => i + 9);
+  // All 24 hours (0 to 23 in 24-hour format)
+  return Array.from({ length: 24 }, (_, i) => i);
 });
 
 const hasSchedule = computed(() => {

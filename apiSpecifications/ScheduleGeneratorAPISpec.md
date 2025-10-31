@@ -6,7 +6,7 @@
 
 ### POST /api/ScheduleGenerator/initializeSchedule
 
-**Description:** Creates an empty schedule document, associating it with the owner, and assigns an incrementing scheduleID.
+**Description:** Gets or creates a schedule for the owner. Each user can only have one schedule. If the user already has a schedule, returns the existing one.
 
 **Requirements:**
 
@@ -14,9 +14,9 @@
 
 **Effects:**
 
-- Creates an empty `schedule` with `owner` as `schedule.owner`.
-- The `scheduleID` for the new schedule increments by 1.
-- Returns the ID of the newly created schedule document.
+- If `owner` does not have a schedule, creates an empty `schedule` with `owner` as `schedule.owner` and increments `scheduleID` by 1.
+- If `owner` already has a schedule, returns the existing schedule ID.
+- Returns the ID of the schedule document (either newly created or existing).
 
 **Request Body:**
 
@@ -69,7 +69,7 @@
   "startTime": "string (ISO Date, e.g., '2023-10-27T10:00:00.000Z')",
   "endTime": "string (ISO Date, e.g., '2023-10-27T11:00:00.000Z')",
   "repeat": {
-    "frequency": "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY",
+    "frequency": "NONE" | "DAILY" | "WEEKLY",
     "daysOfWeek"?: [0, 1, 2, 3, 4, 5, 6]
   }
 }
@@ -117,7 +117,7 @@
   "startTime": "string (ISO Date, e.g., '2023-10-27T10:00:00.000Z')",
   "endTime": "string (ISO Date, e.g., '2023-10-27T11:00:00.000Z')",
   "repeat": {
-    "frequency": "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY",
+    "frequency": "NONE" | "DAILY" | "WEEKLY",
     "daysOfWeek"?: [0, 1, 2, 3, 4, 5, 6]
   }
 }
@@ -309,7 +309,7 @@
 
 ### POST /api/ScheduleGenerator/generateSchedule
 
-**Description:** Retrieves all events and tasks associated with the given schedule, instantiates repeating events for a planning horizon, and prioritizes and schedules tasks into available time slots.
+**Description:** Retrieves all events and tasks associated with the given schedule, instantiates repeating events for a planning horizon, and prioritizes and schedules tasks into available time slots. Events are allowed to overlap.
 
 **Requirements:**
 
@@ -317,9 +317,9 @@
 
 **Effects:**
 
-- Creates a `generatedPlan` for `schedule.owner` such that if possible, all given events start, end, and repeat as specified, and task scheduling is optimized by its attributes.
+- Creates a `generatedPlan` for `schedule.owner` such that all given events start, end, and repeat as specified (events may overlap), and task scheduling is optimized by its attributes.
 - The generated plan details concrete time slots for events and tasks.
-- If doing this is not possible (e.g., due to conflicts), then return an `error`.
+- If task scheduling is not possible due to insufficient available time, then return an `error`.
 
 **Request Body:**
 
@@ -509,7 +509,7 @@
       "startTime": "string (ISO Date)",
       "endTime": "string (ISO Date)",
       "repeat": {
-        "frequency": "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY",
+        "frequency": "NONE" | "DAILY" | "WEEKLY",
         "daysOfWeek"?: [0, 1, 2, 3, 4, 5, 6]
       }
     }
@@ -693,7 +693,7 @@
       "startTime": "string (ISO Date)",
       "endTime": "string (ISO Date)",
       "repeat": {
-        "frequency": "NONE" | "DAILY" | "WEEKLY" | "MONTHLY" | "YEARLY",
+        "frequency": "NONE" | "DAILY" | "WEEKLY",
         "daysOfWeek"?: [0, 1, 2, 3, 4, 5, 6]
       }
     }

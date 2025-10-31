@@ -112,6 +112,7 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useScheduleStore } from "../../stores/scheduleStore.js";
+import { useAuthStore } from "../../stores/authStore.js";
 import EventsView from "./EventsView.vue";
 import TasksView from "./TasksView.vue";
 import EventFormModal from "./EventFormModal.vue";
@@ -119,6 +120,7 @@ import TaskFormModal from "./TaskFormModal.vue";
 import GeneratedScheduleView from "./GeneratedScheduleView.vue";
 
 const scheduleStore = useScheduleStore();
+const authStore = useAuthStore();
 
 // Modal state
 const eventModalOpen = ref(false);
@@ -216,9 +218,24 @@ const generateSchedule = async () => {
   }
 };
 
-onMounted(() => {
-  // Initialize schedule store
-  scheduleStore.initializeSchedule();
+onMounted(async () => {
+  // Initialize schedule every time component is rendered
+  console.log("ScheduleManager mounted");
+  const currentUser = authStore.currentUser;
+  console.log("Current user:", currentUser);
+
+  if (!currentUser) {
+    console.error("No user logged in when ScheduleManager mounted");
+    return;
+  }
+
+  try {
+    console.log("Initializing schedule for user:", currentUser);
+    await scheduleStore.initializeSchedule(currentUser);
+    console.log("Schedule initialized, scheduleId:", scheduleStore.scheduleId);
+  } catch (error) {
+    console.error("Error initializing schedule in ScheduleManager:", error);
+  }
 });
 </script>
 

@@ -48,14 +48,13 @@
             v-model="form.repeat.frequency"
             :disabled="loading"
           >
-            <option value="none">No Repeat</option>
-            <option value="daily">Daily</option>
-            <option value="weekly">Weekly</option>
-            <option value="monthly">Monthly</option>
+            <option value="NONE">No Repeat</option>
+            <option value="DAILY">Daily</option>
+            <option value="WEEKLY">Weekly</option>
           </select>
         </div>
 
-        <div v-if="form.repeat.frequency === 'weekly'" class="form-group">
+        <div v-if="form.repeat.frequency === 'WEEKLY'" class="form-group">
           <label>Days of Week:</label>
           <div class="days-selection">
             <label
@@ -155,7 +154,7 @@ const resetForm = () => {
     startTime: "",
     endTime: "",
     repeat: {
-      frequency: "none",
+      frequency: "NONE",
       daysOfWeek: [],
     },
   };
@@ -167,7 +166,7 @@ const populateForm = (event) => {
     startTime: event.startTime,
     endTime: event.endTime,
     repeat: {
-      frequency: event.repeat?.frequency || "none",
+      frequency: event.repeat?.frequency || "NONE",
       daysOfWeek: event.repeat?.daysOfWeek || [],
     },
   };
@@ -179,20 +178,25 @@ const handleSubmit = async () => {
   try {
     scheduleStore.clearError();
 
+    console.log("EventFormModal: Submitting event");
+    console.log("Schedule ID:", scheduleStore.scheduleId);
+    console.log("Form data:", form.value);
+
     if (isEditing.value) {
-      const updatedEvent = scheduleStore.editEvent(
+      await scheduleStore.editEvent(
         props.eventToEdit.id,
         form.value
       );
-      emit("event-updated", updatedEvent);
+      emit("event-updated");
     } else {
-      const newEvent = scheduleStore.addEvent(form.value);
+      const newEvent = await scheduleStore.addEvent(form.value);
       emit("event-added", newEvent);
     }
 
     resetForm();
     closeModal();
   } catch (err) {
+    console.error("Error submitting event:", err);
     scheduleStore.setError(err.message);
   }
 };

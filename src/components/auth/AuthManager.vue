@@ -45,20 +45,43 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useAuthStore } from "../../stores/authStore.js";
+import { useScheduleStore } from "../../stores/scheduleStore.js";
 import LoginForm from "./LoginForm.vue";
 import RegisterForm from "./RegisterForm.vue";
 import UserProfile from "./UserProfile.vue";
 import ScheduleManager from "../schedule/ScheduleManager.vue";
 
 const authStore = useAuthStore();
+const scheduleStore = useScheduleStore();
 
 const currentView = ref("login");
 
 const isAuthenticated = computed(() => authStore.isLoggedIn);
 const username = computed(() => authStore.currentUsername);
+const currentUser = computed(() => authStore.currentUser);
 
-const handleAuthSuccess = () => {
-  currentView.value = "schedule";
+const handleAuthSuccess = async () => {
+  // Initialize schedule for the logged-in user
+  console.log("handleAuthSuccess called");
+  console.log("currentUser:", currentUser.value);
+
+  if (!currentUser.value) {
+    console.error("No user ID available after authentication");
+    currentView.value = "schedule";
+    return;
+  }
+
+  try {
+    console.log("Initializing schedule for user:", currentUser.value);
+    await scheduleStore.initializeSchedule(currentUser.value);
+    console.log("Schedule initialized successfully, scheduleId:", scheduleStore.scheduleId);
+    currentView.value = "schedule";
+  } catch (error) {
+    console.error("Error initializing schedule:", error);
+    console.error("Error details:", error.message, error.stack);
+    // Still show schedule view even if there's an error
+    currentView.value = "schedule";
+  }
 };
 
 const handleLogout = () => {
@@ -66,13 +89,19 @@ const handleLogout = () => {
   currentView.value = "login";
 };
 
-onMounted(() => {
+onMounted(async () => {
   // Initialize auth state from localStorage
-  authStore.initializeAuth();
+  await authStore.initializeAuth();
 
-  // If user is already authenticated, show schedule
+  // If user is already authenticated, initialize their schedule and show it
   if (isAuthenticated.value) {
-    currentView.value = "schedule";
+    try {
+      await scheduleStore.initializeSchedule(currentUser.value);
+      currentView.value = "schedule";
+    } catch (error) {
+      console.error("Error initializing schedule:", error);
+      currentView.value = "schedule";
+    }
   }
 });
 </script>

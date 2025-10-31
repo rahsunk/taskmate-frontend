@@ -1,14 +1,14 @@
 import { defineStore } from "pinia";
+import { scheduleGeneratorService } from "../services/scheduleGeneratorService.js";
 
 export const useScheduleStore = defineStore("schedule", {
   state: () => ({
+    scheduleId: null, // Backend schedule ID
     events: [],
     tasks: [],
-    nextEventId: 1,
-    nextTaskId: 1,
     loading: false,
     error: null,
-    generatedSchedule: [],
+    generatedSchedule: null,
   }),
 
   getters: {
@@ -49,361 +49,357 @@ export const useScheduleStore = defineStore("schedule", {
   },
 
   actions: {
-    // Initialize schedule for a new user
-    initializeSchedule() {
-      this.events = [];
-      this.tasks = [];
-      this.nextEventId = 1;
-      this.nextTaskId = 1;
+    // Initialize schedule for a user (gets or creates backend schedule)
+    async initializeSchedule(owner) {
+      this.loading = true;
       this.error = null;
-    },
 
-    // Add a new event
-    addEvent(eventData) {
-      const newEvent = {
-        id: this.nextEventId++,
-        name: eventData.name,
-        startTime: eventData.startTime,
-        endTime: eventData.endTime,
-        repeat: eventData.repeat || { frequency: "none", daysOfWeek: [] },
-        createdAt: new Date().toISOString(),
-      };
-
-      this.events.push(newEvent);
-      return newEvent;
-    },
-
-    // Edit an existing event
-    editEvent(eventId, eventData) {
-      const eventIndex = this.events.findIndex((event) => event.id === eventId);
-      if (eventIndex !== -1) {
-        this.events[eventIndex] = {
-          ...this.events[eventIndex],
-          name: eventData.name,
-          startTime: eventData.startTime,
-          endTime: eventData.endTime,
-          repeat: eventData.repeat || { frequency: "none", daysOfWeek: [] },
-          updatedAt: new Date().toISOString(),
-        };
-        return this.events[eventIndex];
-      }
-      throw new Error("Event not found");
-    },
-
-    // Delete an event
-    deleteEvent(eventId) {
-      const eventIndex = this.events.findIndex((event) => event.id === eventId);
-      if (eventIndex !== -1) {
-        this.events.splice(eventIndex, 1);
-        return true;
-      }
-      throw new Error("Event not found");
-    },
-
-    // Add a new task
-    addTask(taskData) {
-      const newTask = {
-        id: this.nextTaskId++,
-        name: taskData.name,
-        deadline: taskData.deadline,
-        expectedCompletionTime: taskData.expectedCompletionTime,
-        completionLevel: taskData.completionLevel || 0,
-        priority: taskData.priority,
-        createdAt: new Date().toISOString(),
-      };
-
-      this.tasks.push(newTask);
-      return newTask;
-    },
-
-    // Edit an existing task
-    editTask(taskId, taskData) {
-      const taskIndex = this.tasks.findIndex((task) => task.id === taskId);
-      if (taskIndex !== -1) {
-        this.tasks[taskIndex] = {
-          ...this.tasks[taskIndex],
-          name: taskData.name,
-          deadline: taskData.deadline,
-          expectedCompletionTime: taskData.expectedCompletionTime,
-          completionLevel: taskData.completionLevel,
-          priority: taskData.priority,
-          updatedAt: new Date().toISOString(),
-        };
-        return this.tasks[taskIndex];
-      }
-      throw new Error("Task not found");
-    },
-
-    // Delete a task
-    deleteTask(taskId) {
-      const taskIndex = this.tasks.findIndex((task) => task.id === taskId);
-      if (taskIndex !== -1) {
-        this.tasks.splice(taskIndex, 1);
-        return true;
-      }
-      throw new Error("Task not found");
-    },
-
-    // Update task completion level
-    updateTaskCompletion(taskId, completionLevel) {
-      const taskIndex = this.tasks.findIndex((task) => task.id === taskId);
-      if (taskIndex !== -1) {
-        this.tasks[taskIndex].completionLevel = Math.max(
-          0,
-          Math.min(100, completionLevel)
-        );
-        this.tasks[taskIndex].updatedAt = new Date().toISOString();
-        return this.tasks[taskIndex];
-      }
-      throw new Error("Task not found");
-    },
-
-    // Clear error
-    clearError() {
-      this.error = null;
-    },
-
-    // Set error
-    setError(errorMessage) {
-      this.error = errorMessage;
-    },
-
-    // Generate schedule using greedy algorithm
-    generateSchedule() {
       try {
-        this.clearError();
-
-        const schedule = [];
-        const activeHours = { start: 9, end: 18 }; // 9 AM to 6 PM
-
-        // Helper function to check if two time slots overlap
-        const hasOverlap = (start1, end1, start2, end2) => {
-          return start1 < end2 && start2 < end1;
-        };
-
-        // Helper function to check if a time slot conflicts with existing items
-        const hasConflict = (startTime, endTime, existingItems) => {
-          return existingItems.some((item) =>
-            hasOverlap(
-              new Date(item.scheduledStartTime).getTime(),
-              new Date(item.scheduledEndTime).getTime(),
-              startTime,
-              endTime
-            )
-          );
-        };
-
-        // Helper function to find next available slot
-        const findAvailableSlot = (durationMinutes, date, existingItems) => {
-          const startOfDay = new Date(date);
-          startOfDay.setHours(activeHours.start, 0, 0, 0);
-
-          const endOfDay = new Date(date);
-          endOfDay.setHours(activeHours.end, 0, 0, 0);
-
-          // Try every 15-minute interval
-          for (
-            let time = startOfDay.getTime();
-            time < endOfDay.getTime();
-            time += 15 * 60 * 1000
-          ) {
-            const slotStart = time;
-            const slotEnd = time + durationMinutes * 60 * 1000;
-
-            // Check if this slot fits within active hours
-            if (slotEnd <= endOfDay.getTime()) {
-              // Check if this slot conflicts with existing items
-              if (!hasConflict(slotStart, slotEnd, existingItems)) {
-                return {
-                  start: slotStart,
-                  end: slotEnd,
-                };
-              }
-            }
-          }
-
-          return null; // No available slot found
-        };
-
-        // Process events first (they have fixed times)
-        this.events.forEach((event) => {
-          const startTime = new Date(event.startTime);
-          const endTime = new Date(event.endTime);
-
-          // Handle repeating events
-          if (event.repeat.frequency !== "none") {
-            const occurrences = this.generateEventOccurrences(event);
-            occurrences.forEach((occurrence) => {
-              schedule.push({
-                id: `${event.id}-${occurrence.date}`,
-                originalId: event.id,
-                type: "event",
-                name: event.name,
-                scheduledStartTime: occurrence.startTime,
-                scheduledEndTime: occurrence.endTime,
-                ...event,
-              });
-            });
-          } else {
-            // Single event
-            schedule.push({
-              id: `${event.id}`,
-              originalId: event.id,
-              type: "event",
-              name: event.name,
-              scheduledStartTime: event.startTime,
-              scheduledEndTime: event.endTime,
-              ...event,
-            });
-          }
-        });
-
-        // Process tasks (schedule them around events)
-        const tasksToSchedule = this.tasks
-          .filter((task) => task.completionLevel < 100) // Only schedule incomplete tasks
-          .sort((a, b) => {
-            // Sort by deadline first, then by priority
-            const deadlineA = new Date(a.deadline);
-            const deadlineB = new Date(b.deadline);
-
-            if (deadlineA.getTime() !== deadlineB.getTime()) {
-              return deadlineA - deadlineB;
-            }
-
-            return b.priority - a.priority;
-          });
-
-        tasksToSchedule.forEach((task) => {
-          const deadline = new Date(task.deadline);
-          const durationMinutes = task.expectedCompletionTime;
-
-          // Try to schedule the task before its deadline
-          const startDate = new Date();
-          startDate.setHours(0, 0, 0, 0);
-
-          const endDate = new Date(deadline);
-          endDate.setHours(23, 59, 59, 999);
-
-          // Try each day from today until deadline
-          for (
-            let date = new Date(startDate);
-            date <= endDate;
-            date.setDate(date.getDate() + 1)
-          ) {
-            const dateString = date.toDateString();
-            const existingItems = schedule.filter(
-              (item) =>
-                new Date(item.scheduledStartTime).toDateString() === dateString
-            );
-
-            const slot = findAvailableSlot(
-              durationMinutes,
-              date,
-              existingItems
-            );
-
-            if (slot) {
-              schedule.push({
-                id: `task-${task.id}`,
-                originalId: task.id,
-                type: "task",
-                name: task.name,
-                scheduledStartTime: new Date(slot.start).toISOString(),
-                scheduledEndTime: new Date(slot.end).toISOString(),
-                ...task,
-              });
-              break; // Task scheduled successfully
-            }
-          }
-        });
-
-        // Sort schedule by start time
-        schedule.sort(
-          (a, b) =>
-            new Date(a.scheduledStartTime) - new Date(b.scheduledStartTime)
+        // Get or create schedule for user
+        const response = await scheduleGeneratorService.initializeSchedule(
+          owner
         );
+        this.scheduleId = response.schedule;
 
-        this.generatedSchedule = schedule;
-        return schedule;
+        // Load events and tasks for this schedule
+        await this.loadScheduleData();
       } catch (error) {
-        this.setError(error.message);
+        this.error = error.message;
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // Load events and tasks from backend
+    async loadScheduleData() {
+      if (!this.scheduleId) {
+        throw new Error("No schedule ID set");
+      }
+
+      try {
+        // Load events - returns array of {event: "id"}
+        const eventsResponse =
+          await scheduleGeneratorService.getEventsForSchedule(this.scheduleId);
+
+        console.log("Events response:", eventsResponse);
+
+        // Fetch full details for each event
+
+        if (
+          Array.isArray(eventsResponse.event) &&
+          eventsResponse.event.length > 0
+        ) {
+          const eventPromises = eventsResponse.event.map((event) =>
+            scheduleGeneratorService.getEventDetails(event)
+          );
+          const eventDetailsArray = await Promise.all(eventPromises);
+
+          // Map event details to include id field for frontend
+          this.events = eventDetailsArray.map((detail) => ({
+            id: detail.eventDetails[0]._id || detail.eventDetails[0].event,
+            ...detail.eventDetails[0],
+          }));
+        } else {
+          this.events = [];
+        }
+
+        // Load tasks - returns array of {task: "id"}
+        const tasksResponse =
+          await scheduleGeneratorService.getTasksForSchedule(this.scheduleId);
+
+        console.log("Tasks response:", tasksResponse);
+        // console.log("BRUH");
+        // console.log(tasksResponse);
+
+        // Fetch full details for each task
+        if (
+          Array.isArray(tasksResponse.task) &&
+          tasksResponse.task.length > 0
+        ) {
+          const taskPromises = tasksResponse.task.map((task) =>
+            scheduleGeneratorService.getTaskDetails(task)
+          );
+
+          const taskDetailsArray = await Promise.all(taskPromises);
+          console.log("HERE");
+          console.log(taskDetailsArray);
+
+          // Map task details to include id field for frontend
+          this.tasks = taskDetailsArray.map((detail) => ({
+            id: detail.taskDetails[0]._id || detail.taskDetails[0].task,
+            ...detail.taskDetails[0],
+          }));
+        } else {
+          this.tasks = [];
+        }
+
+        console.log("Loaded events:", this.events);
+        console.log("Loaded tasks:", this.tasks);
+      } catch (error) {
+        console.error("Error loading schedule data:", error);
+        this.error = error.message;
         throw error;
       }
     },
 
-    // Generate occurrences for repeating events
+    // Add a new event
+    async addEvent(eventData) {
+      if (!this.scheduleId) {
+        throw new Error("No schedule initialized");
+      }
+
+      this.loading = true;
+      this.error = null;
+
+      try {
+        console.log("Adding event with data:", eventData);
+        const response = await scheduleGeneratorService.addEvent(
+          this.scheduleId,
+          eventData.name,
+          eventData.startTime,
+          eventData.endTime,
+          eventData.repeat || { frequency: "NONE", daysOfWeek: [] }
+        );
+        console.log("Event added, response:", response);
+
+        // Reload events from backend
+        console.log("Reloading schedule data...");
+        await this.loadScheduleData();
+        console.log(
+          "Schedule data reloaded, events count:",
+          this.events.length
+        );
+
+        return response.event;
+      } catch (error) {
+        console.error("Error in addEvent:", error);
+        this.error = error.message;
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // Edit an existing event
+    async editEvent(eventId, eventData) {
+      if (!this.scheduleId) {
+        throw new Error("No schedule initialized");
+      }
+
+      this.loading = true;
+      this.error = null;
+
+      try {
+        await scheduleGeneratorService.editEvent(
+          this.scheduleId,
+          eventId,
+          eventData.name,
+          eventData.startTime,
+          eventData.endTime,
+          eventData.repeat || { frequency: "NONE", daysOfWeek: [] }
+        );
+
+        // Reload events from backend
+        await this.loadScheduleData();
+      } catch (error) {
+        this.error = error.message;
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // Delete an event
+    async deleteEvent(eventId) {
+      if (!this.scheduleId) {
+        throw new Error("No schedule initialized");
+      }
+
+      this.loading = true;
+      this.error = null;
+
+      try {
+        await scheduleGeneratorService.deleteEvent(this.scheduleId, eventId);
+
+        // Reload events from backend
+        await this.loadScheduleData();
+      } catch (error) {
+        this.error = error.message;
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // Add a new task
+    async addTask(taskData) {
+      if (!this.scheduleId) {
+        throw new Error("No schedule initialized");
+      }
+
+      this.loading = true;
+      this.error = null;
+
+      try {
+        const response = await scheduleGeneratorService.addTask(
+          this.scheduleId,
+          taskData.name,
+          taskData.deadline,
+          taskData.expectedCompletionTime || 60,
+          taskData.completionLevel || 0,
+          taskData.priority || 50
+        );
+
+        // Reload tasks from backend
+        await this.loadScheduleData();
+
+        return response.task;
+      } catch (error) {
+        this.error = error.message;
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // Edit an existing task
+    async editTask(taskId, taskData) {
+      if (!this.scheduleId) {
+        throw new Error("No schedule initialized");
+      }
+
+      this.loading = true;
+      this.error = null;
+
+      try {
+        await scheduleGeneratorService.editTask(
+          this.scheduleId,
+          taskId,
+          taskData.name,
+          taskData.deadline,
+          taskData.expectedCompletionTime || 60,
+          taskData.completionLevel || 0,
+          taskData.priority || 50
+        );
+
+        // Reload tasks from backend
+        await this.loadScheduleData();
+      } catch (error) {
+        this.error = error.message;
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // Delete a task
+    async deleteTask(taskId) {
+      if (!this.scheduleId) {
+        throw new Error("No schedule initialized");
+      }
+
+      this.loading = true;
+      this.error = null;
+
+      try {
+        await scheduleGeneratorService.deleteTask(this.scheduleId, taskId);
+
+        // Reload tasks from backend
+        await this.loadScheduleData();
+      } catch (error) {
+        this.error = error.message;
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // Update task completion level
+    async updateTaskCompletion(taskId, completionLevel) {
+      const task = this.tasks.find((t) => t.id === taskId);
+      if (!task) {
+        throw new Error("Task not found");
+      }
+
+      await this.editTask(taskId, {
+        ...task,
+        completionLevel,
+      });
+    },
+
+    // Generate schedule
+    async generateSchedule() {
+      if (!this.scheduleId) {
+        throw new Error("No schedule initialized");
+      }
+
+      this.loading = true;
+      this.error = null;
+
+      try {
+        const response = await scheduleGeneratorService.generateSchedule(
+          this.scheduleId
+        );
+        this.generatedSchedule = response.generatedPlan || response;
+        return this.generatedSchedule;
+      } catch (error) {
+        this.error = error.message;
+        throw error;
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    // Helper method to generate event occurrences (for display purposes)
     generateEventOccurrences(event) {
       const occurrences = [];
-      const startDate = new Date(event.startTime);
-      const endDate = new Date(event.endTime);
-      const duration = endDate.getTime() - startDate.getTime();
-
       const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const horizon = 14; // 14 days ahead
 
-      const endOfWeek = new Date(today);
-      endOfWeek.setDate(today.getDate() + 7); // Generate for next 7 days
+      for (let i = 0; i < horizon; i++) {
+        const date = new Date(today);
+        date.setDate(date.getDate() + i);
 
-      if (event.repeat.frequency === "daily") {
-        for (
-          let date = new Date(today);
-          date <= endOfWeek;
-          date.setDate(date.getDate() + 1)
-        ) {
-          const occurrenceStart = new Date(date);
-          occurrenceStart.setHours(
-            startDate.getHours(),
-            startDate.getMinutes(),
-            0,
-            0
-          );
+        let shouldInclude = false;
 
-          const occurrenceEnd = new Date(occurrenceStart.getTime() + duration);
-
-          occurrences.push({
-            date: date.toDateString(),
-            startTime: occurrenceStart.toISOString(),
-            endTime: occurrenceEnd.toISOString(),
-          });
-        }
-      } else if (event.repeat.frequency === "weekly") {
-        const daysOfWeek = event.repeat.daysOfWeek || [];
-
-        for (
-          let date = new Date(today);
-          date <= endOfWeek;
-          date.setDate(date.getDate() + 1)
-        ) {
-          if (daysOfWeek.includes(date.getDay())) {
-            const occurrenceStart = new Date(date);
-            occurrenceStart.setHours(
-              startDate.getHours(),
-              startDate.getMinutes(),
-              0,
-              0
-            );
-
-            const occurrenceEnd = new Date(
-              occurrenceStart.getTime() + duration
-            );
-
-            occurrences.push({
-              date: date.toDateString(),
-              startTime: occurrenceStart.toISOString(),
-              endTime: occurrenceEnd.toISOString(),
-            });
+        if (event.repeat.frequency === "NONE") {
+          const eventDate = new Date(event.startTime);
+          if (
+            date.getDate() === eventDate.getDate() &&
+            date.getMonth() === eventDate.getMonth() &&
+            date.getFullYear() === eventDate.getFullYear()
+          ) {
+            shouldInclude = true;
+          }
+        } else if (event.repeat.frequency === "DAILY") {
+          shouldInclude = true;
+        } else if (event.repeat.frequency === "WEEKLY") {
+          if (event.repeat.daysOfWeek?.includes(date.getDay())) {
+            shouldInclude = true;
           }
         }
-      } else if (event.repeat.frequency === "monthly") {
-        // For monthly, just show the original event for now
-        occurrences.push({
-          date: startDate.toDateString(),
-          startTime: event.startTime,
-          endTime: event.endTime,
-        });
+
+        if (shouldInclude) {
+          const occurrence = {
+            ...event,
+            date: date.toISOString(),
+          };
+          occurrences.push(occurrence);
+        }
       }
 
       return occurrences;
+    },
+
+    // Set error message
+    setError(message) {
+      this.error = message;
+    },
+
+    // Clear error message
+    clearError() {
+      this.error = null;
     },
   },
 });

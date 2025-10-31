@@ -187,20 +187,25 @@ const handleSubmit = async () => {
   try {
     scheduleStore.clearError();
 
+    console.log("TaskFormModal: Submitting task");
+    console.log("Schedule ID:", scheduleStore.scheduleId);
+    console.log("Form data:", form.value);
+
     if (isEditing.value) {
-      const updatedTask = scheduleStore.editTask(
+      await scheduleStore.editTask(
         props.taskToEdit.id,
         form.value
       );
-      emit("task-updated", updatedTask);
+      emit("task-updated");
     } else {
-      const newTask = scheduleStore.addTask(form.value);
+      const newTask = await scheduleStore.addTask(form.value);
       emit("task-added", newTask);
     }
 
     resetForm();
     closeModal();
   } catch (err) {
+    console.error("Error submitting task:", err);
     scheduleStore.setError(err.message);
   }
 };
