@@ -1,5 +1,7 @@
-# Vue 3 + Vite
+# 6.1040 Assignment 4b Final Submission
 
-This template should help get you started developing with Vue 3 in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Deliverables are located [here](deliverables/final).
 
-Learn more about IDE Support for Vue in the [Vue Docs Scaling up Guide](https://vuejs.org/guide/scaling-up/tooling.html#ide-support).
+This includes the visual design study and updated screen recording and user journey.
+
+For the updated design document, see the backend repository.
