@@ -76,15 +76,30 @@ export const useFriendStore = defineStore("friend", {
     },
 
     // Load all friend data for a user
-    async loadFriendData(userId) {
+    async loadFriendData() {
       this.loading = true;
       this.error = null;
 
       try {
+        const authStore = useAuthStore();
+        const session = authStore.currentSession;
+
+        if (!session) {
+          throw new Error("No active session");
+        }
+
         // Fetch friendships
-        const friendshipsData = await friendListService.getFriendshipsByUser(
-          userId
+        const friendshipsResponse = await friendListService.getFriendshipsByUser(
+          session
         );
+
+        // Handle response format: array or error object
+        let friendshipsData = [];
+        if (Array.isArray(friendshipsResponse.results)) {
+          friendshipsData = friendshipsResponse.results;
+        } else if (friendshipsResponse.results?.error) {
+          throw new Error(friendshipsResponse.results.error);
+        }
 
         // Enrich friendships with usernames
         this.friends = await Promise.all(
@@ -100,9 +115,17 @@ export const useFriendStore = defineStore("friend", {
         );
 
         // Fetch sent requests
-        const sentRequestsData = await friendListService.getSentFriendRequests(
-          userId
+        const sentRequestsResponse = await friendListService.getSentFriendRequests(
+          session
         );
+
+        // Handle response format: array or error object
+        let sentRequestsData = [];
+        if (Array.isArray(sentRequestsResponse.results)) {
+          sentRequestsData = sentRequestsResponse.results;
+        } else if (sentRequestsResponse.results?.error) {
+          throw new Error(sentRequestsResponse.results.error);
+        }
 
         // Enrich sent requests with usernames
         this.sentRequests = await Promise.all(
@@ -118,8 +141,16 @@ export const useFriendStore = defineStore("friend", {
         );
 
         // Fetch received requests
-        const receivedRequestsData =
-          await friendListService.getReceivedFriendRequests(userId);
+        const receivedRequestsResponse =
+          await friendListService.getReceivedFriendRequests(session);
+
+        // Handle response format: array or error object
+        let receivedRequestsData = [];
+        if (Array.isArray(receivedRequestsResponse.results)) {
+          receivedRequestsData = receivedRequestsResponse.results;
+        } else if (receivedRequestsResponse.results?.error) {
+          throw new Error(receivedRequestsResponse.results.error);
+        }
 
         // Enrich received requests with usernames
         this.receivedRequests = await Promise.all(
@@ -141,27 +172,40 @@ export const useFriendStore = defineStore("friend", {
     },
 
     // Send a friend request
-    async sendFriendRequest(sender, receiverUsername) {
+    async sendFriendRequest(receiverUsername) {
       this.loading = true;
       this.error = null;
 
       try {
+        const authStore = useAuthStore();
+        const session = authStore.currentSession;
+        const sender = authStore.currentUser;
+
+        if (!session) {
+          throw new Error("No active session");
+        }
+
         // Get receiver user ID from username
         const receiver = await this.getUserIdByUsername(receiverUsername);
 
         // Send request to backend
         const response = await friendListService.sendFriendRequest(
-          sender,
+          session,
           receiver
         );
 
-        // Add to local state
-        this.sentRequests.push({
-          _id: response.request,
-          sender,
-          receiver,
-          receiverUsername,
-        });
+        // Handle response: check for friendRequest ID
+        if (response.friendRequest) {
+          // Add to local state
+          this.sentRequests.push({
+            _id: response.friendRequest,
+            sender,
+            receiver,
+            receiverUsername,
+          });
+        } else if (response.error) {
+          throw new Error(response.error);
+        }
 
         this.loading = false;
         return response;
@@ -173,35 +217,48 @@ export const useFriendStore = defineStore("friend", {
     },
 
     // Accept a friend request
-    async acceptFriendRequest(receiver, sender) {
+    async acceptFriendRequest(sender) {
       this.loading = true;
       this.error = null;
 
       try {
+        const authStore = useAuthStore();
+        const session = authStore.currentSession;
+        const receiver = authStore.currentUser;
+
+        if (!session) {
+          throw new Error("No active session");
+        }
+
         // Accept request on backend
-        await friendListService.acceptFriendRequest(receiver, sender);
+        const response = await friendListService.acceptFriendRequest(session, sender);
 
-        // Find and remove the request from local state
-        const requestIndex = this.receivedRequests.findIndex(
-          (req) => req.sender === sender && req.receiver === receiver
-        );
+        // Handle response
+        if (response.status === "accepted") {
+          // Find and remove the request from local state
+          const requestIndex = this.receivedRequests.findIndex(
+            (req) => req.sender === sender
+          );
 
-        if (requestIndex !== -1) {
-          const request = this.receivedRequests[requestIndex];
-          this.receivedRequests.splice(requestIndex, 1);
+          if (requestIndex !== -1) {
+            const request = this.receivedRequests[requestIndex];
+            this.receivedRequests.splice(requestIndex, 1);
 
-          // Add to friends list
-          const senderUsername =
-            request.senderUsername || (await this.getUsernameById(sender));
-          const receiverUsername = await this.getUsernameById(receiver);
+            // Add to friends list
+            const senderUsername =
+              request.senderUsername || (await this.getUsernameById(sender));
+            const receiverUsername = await this.getUsernameById(receiver);
 
-          this.friends.push({
-            _id: `${sender}_${receiver}`, // Temporary ID
-            user1: sender < receiver ? sender : receiver,
-            user2: sender < receiver ? receiver : sender,
-            username1: sender < receiver ? senderUsername : receiverUsername,
-            username2: sender < receiver ? receiverUsername : senderUsername,
-          });
+            this.friends.push({
+              _id: `${sender}_${receiver}`, // Temporary ID
+              user1: sender < receiver ? sender : receiver,
+              user2: sender < receiver ? receiver : sender,
+              username1: sender < receiver ? senderUsername : receiverUsername,
+              username2: sender < receiver ? receiverUsername : senderUsername,
+            });
+          }
+        } else if (response.error) {
+          throw new Error(response.error);
         }
 
         this.loading = false;
@@ -213,21 +270,33 @@ export const useFriendStore = defineStore("friend", {
     },
 
     // Decline a friend request
-    async declineFriendRequest(receiver, sender) {
+    async declineFriendRequest(sender) {
       this.loading = true;
       this.error = null;
 
       try {
+        const authStore = useAuthStore();
+        const session = authStore.currentSession;
+
+        if (!session) {
+          throw new Error("No active session");
+        }
+
         // Decline request on backend
-        await friendListService.declineFriendRequest(receiver, sender);
+        const response = await friendListService.declineFriendRequest(session, sender);
 
-        // Remove from local state
-        const requestIndex = this.receivedRequests.findIndex(
-          (req) => req.sender === sender && req.receiver === receiver
-        );
+        // Handle response
+        if (response.status === "declined") {
+          // Remove from local state
+          const requestIndex = this.receivedRequests.findIndex(
+            (req) => req.sender === sender
+          );
 
-        if (requestIndex !== -1) {
-          this.receivedRequests.splice(requestIndex, 1);
+          if (requestIndex !== -1) {
+            this.receivedRequests.splice(requestIndex, 1);
+          }
+        } else if (response.error) {
+          throw new Error(response.error);
         }
 
         this.loading = false;
@@ -239,21 +308,33 @@ export const useFriendStore = defineStore("friend", {
     },
 
     // Cancel a sent friend request
-    async cancelSentRequest(sender, receiver) {
+    async cancelSentRequest(receiver) {
       this.loading = true;
       this.error = null;
 
       try {
+        const authStore = useAuthStore();
+        const session = authStore.currentSession;
+
+        if (!session) {
+          throw new Error("No active session");
+        }
+
         // Cancel request on backend
-        await friendListService.cancelSentRequest(sender, receiver);
+        const response = await friendListService.cancelSentRequest(session, receiver);
 
-        // Remove from local state
-        const requestIndex = this.sentRequests.findIndex(
-          (req) => req.sender === sender && req.receiver === receiver
-        );
+        // Handle response
+        if (response.status === "canceled") {
+          // Remove from local state
+          const requestIndex = this.sentRequests.findIndex(
+            (req) => req.receiver === receiver
+          );
 
-        if (requestIndex !== -1) {
-          this.sentRequests.splice(requestIndex, 1);
+          if (requestIndex !== -1) {
+            this.sentRequests.splice(requestIndex, 1);
+          }
+        } else if (response.error) {
+          throw new Error(response.error);
         }
 
         this.loading = false;
@@ -265,23 +346,36 @@ export const useFriendStore = defineStore("friend", {
     },
 
     // Remove a friend
-    async removeFriend(user1, user2) {
+    async removeFriend(user2) {
       this.loading = true;
       this.error = null;
 
       try {
+        const authStore = useAuthStore();
+        const session = authStore.currentSession;
+        const user1 = authStore.currentUser;
+
+        if (!session) {
+          throw new Error("No active session");
+        }
+
         // Remove friend on backend
-        await friendListService.removeFriend(user1, user2);
+        const response = await friendListService.removeFriend(session, user2);
 
-        // Remove from local state
-        const friendIndex = this.friends.findIndex(
-          (f) =>
-            (f.user1 === user1 && f.user2 === user2) ||
-            (f.user1 === user2 && f.user2 === user1)
-        );
+        // Handle response
+        if (response.status === "removed") {
+          // Remove from local state
+          const friendIndex = this.friends.findIndex(
+            (f) =>
+              (f.user1 === user1 && f.user2 === user2) ||
+              (f.user1 === user2 && f.user2 === user1)
+          );
 
-        if (friendIndex !== -1) {
-          this.friends.splice(friendIndex, 1);
+          if (friendIndex !== -1) {
+            this.friends.splice(friendIndex, 1);
+          }
+        } else if (response.error) {
+          throw new Error(response.error);
         }
 
         this.loading = false;

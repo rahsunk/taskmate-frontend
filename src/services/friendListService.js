@@ -1,14 +1,14 @@
 import apiClient from "../config/api.js";
 
-const FRIEND_LIST_BASE = "/FriendList";
+const FRIEND_LIST_BASE = "/api/FriendList";
 
 export const friendListService = {
   // Send a friend request
-  async sendFriendRequest(sender, receiver) {
+  async sendFriendRequest(session, receiver) {
     try {
       const response = await apiClient.post(
         `${FRIEND_LIST_BASE}/sendFriendRequest`,
-        { sender, receiver }
+        { session, receiver }
       );
       return response.data;
     } catch (error) {
@@ -19,11 +19,11 @@ export const friendListService = {
   },
 
   // Accept a friend request
-  async acceptFriendRequest(receiver, sender) {
+  async acceptFriendRequest(session, sender) {
     try {
       const response = await apiClient.post(
         `${FRIEND_LIST_BASE}/acceptFriendRequest`,
-        { receiver, sender }
+        { session, sender }
       );
       return response.data;
     } catch (error) {
@@ -34,11 +34,11 @@ export const friendListService = {
   },
 
   // Decline a friend request
-  async declineFriendRequest(receiver, sender) {
+  async declineFriendRequest(session, sender) {
     try {
       const response = await apiClient.post(
         `${FRIEND_LIST_BASE}/declineFriendRequest`,
-        { receiver, sender }
+        { session, sender }
       );
       return response.data;
     } catch (error) {
@@ -49,11 +49,11 @@ export const friendListService = {
   },
 
   // Cancel a sent friend request
-  async cancelSentRequest(sender, receiver) {
+  async cancelSentRequest(session, receiver) {
     try {
       const response = await apiClient.post(
         `${FRIEND_LIST_BASE}/cancelSentRequest`,
-        { sender, receiver }
+        { session, receiver }
       );
       return response.data;
     } catch (error) {
@@ -64,10 +64,10 @@ export const friendListService = {
   },
 
   // Remove a friend
-  async removeFriend(user1, user2) {
+  async removeFriend(session, user2) {
     try {
       const response = await apiClient.post(`${FRIEND_LIST_BASE}/removeFriend`, {
-        user1,
+        session,
         user2,
       });
       return response.data;
@@ -76,12 +76,12 @@ export const friendListService = {
     }
   },
 
-  // Get friendships by user
-  async getFriendshipsByUser(user) {
+  // Get friendships by user (logged-in user)
+  async getFriendshipsByUser(session) {
     try {
       const response = await apiClient.post(
         `${FRIEND_LIST_BASE}/_getFriendshipsByUser`,
-        { user }
+        { session }
       );
       return response.data;
     } catch (error) {
@@ -91,12 +91,12 @@ export const friendListService = {
     }
   },
 
-  // Get sent friend requests
-  async getSentFriendRequests(sender) {
+  // Get sent friend requests (logged-in user)
+  async getSentFriendRequests(session) {
     try {
       const response = await apiClient.post(
         `${FRIEND_LIST_BASE}/_getSentFriendRequests`,
-        { sender }
+        { session }
       );
       return response.data;
     } catch (error) {
@@ -106,12 +106,12 @@ export const friendListService = {
     }
   },
 
-  // Get received friend requests
-  async getReceivedFriendRequests(receiver) {
+  // Get received friend requests (logged-in user)
+  async getReceivedFriendRequests(session) {
     try {
       const response = await apiClient.post(
         `${FRIEND_LIST_BASE}/_getReceivedFriendRequests`,
-        { receiver }
+        { session }
       );
       return response.data;
     } catch (error) {
@@ -122,11 +122,11 @@ export const friendListService = {
   },
 
   // Get all friendships (admin/debug endpoint)
-  async getAllFriendships() {
+  async getAllFriendships(session) {
     try {
       const response = await apiClient.post(
         `${FRIEND_LIST_BASE}/_getAllFriendships`,
-        {}
+        { session }
       );
       return response.data;
     } catch (error) {
@@ -137,11 +137,11 @@ export const friendListService = {
   },
 
   // Get all friend requests (admin/debug endpoint)
-  async getAllFriendRequests() {
+  async getAllFriendRequests(session) {
     try {
       const response = await apiClient.post(
         `${FRIEND_LIST_BASE}/_getAllFriendRequests`,
-        {}
+        { session }
       );
       return response.data;
     } catch (error) {

@@ -228,7 +228,7 @@ const isLoading = computed(() => friendStore.isLoading || isProcessing.value);
 onMounted(async () => {
   if (currentUser.value) {
     try {
-      await friendStore.loadFriendData(currentUser.value);
+      await friendStore.loadFriendData();
     } catch (error) {
       console.error("Failed to load friend data:", error);
     }
@@ -252,7 +252,7 @@ const handleSendRequest = async () => {
   isProcessing.value = true;
 
   try {
-    await friendStore.sendFriendRequest(currentUser.value, username);
+    await friendStore.sendFriendRequest(username);
     showSuccess("Friend request sent successfully!");
     newFriendUsername.value = "";
     activeTab.value = "sent";
@@ -270,7 +270,7 @@ const handleAcceptRequest = async (request) => {
   isProcessing.value = true;
 
   try {
-    await friendStore.acceptFriendRequest(currentUser.value, request.sender);
+    await friendStore.acceptFriendRequest(request.sender);
     showSuccess("Friend request accepted!");
   } catch (error) {
     console.error("Failed to accept friend request:", error);
@@ -285,7 +285,7 @@ const handleDeclineRequest = async (request) => {
   isProcessing.value = true;
 
   try {
-    await friendStore.declineFriendRequest(currentUser.value, request.sender);
+    await friendStore.declineFriendRequest(request.sender);
     showSuccess("Friend request declined");
   } catch (error) {
     console.error("Failed to decline friend request:", error);
@@ -300,7 +300,7 @@ const handleCancelRequest = async (request) => {
   isProcessing.value = true;
 
   try {
-    await friendStore.cancelSentRequest(currentUser.value, request.receiver);
+    await friendStore.cancelSentRequest(request.receiver);
     showSuccess("Friend request canceled");
   } catch (error) {
     console.error("Failed to cancel friend request:", error);
@@ -317,7 +317,13 @@ const handleRemoveFriend = async (friendship) => {
   isProcessing.value = true;
 
   try {
-    await friendStore.removeFriend(friendship.user1, friendship.user2);
+    // Get the friend's user ID (the other user in the friendship)
+    const friendUserId =
+      friendship.user1 === currentUser.value
+        ? friendship.user2
+        : friendship.user1;
+
+    await friendStore.removeFriend(friendUserId);
     showSuccess("Friend removed");
   } catch (error) {
     console.error("Failed to remove friend:", error);
