@@ -86,8 +86,28 @@ export const useMessagingStore = defineStore("messaging", {
       this.error = null;
 
       try {
-        const conversationsData =
-          await messagingService.getConversationsForUser(userId);
+        const authStore = useAuthStore();
+        const session = authStore.currentSession;
+
+        if (!session) {
+          throw new Error("No active session");
+        }
+
+        const response = await messagingService.getConversationsForUser(
+          session,
+          userId
+        );
+
+        // Handle response format: { conversations: ConversationDoc[] }
+        let conversationsData = [];
+        if (Array.isArray(response.conversations)) {
+          conversationsData = response.conversations;
+        } else if (response.error) {
+          throw new Error(response.error);
+        } else if (Array.isArray(response)) {
+          // Fallback: direct array
+          conversationsData = response;
+        }
 
         // Enrich conversations with usernames
         this.conversations = await Promise.all(
@@ -120,6 +140,13 @@ export const useMessagingStore = defineStore("messaging", {
       this.error = null;
 
       try {
+        const authStore = useAuthStore();
+        const session = authStore.currentSession;
+
+        if (!session) {
+          throw new Error("No active session");
+        }
+
         // Check if conversation already exists locally
         const existingConversation = this.conversations.find(
           (c) =>
@@ -136,33 +163,70 @@ export const useMessagingStore = defineStore("messaging", {
           return existingConversation;
         }
 
-        // Create new conversation
+        // Try to create new conversation
         const response = await messagingService.createConversation(
-          currentUserId,
+          session,
           friendUserId
         );
 
-        const friendUsername = await this.getUsernameById(friendUserId);
-        const currentUsername = await this.getUsernameById(currentUserId);
+        // Handle response
+        if (response.conversationId) {
+          const friendUsername = await this.getUsernameById(friendUserId);
+          const currentUsername = await this.getUsernameById(currentUserId);
 
-        const newConversation = {
-          _id: response.conversationId,
-          participant1:
-            currentUserId < friendUserId ? currentUserId : friendUserId,
-          participant2:
-            currentUserId < friendUserId ? friendUserId : currentUserId,
-          participant1Username:
-            currentUserId < friendUserId ? currentUsername : friendUsername,
-          participant2Username:
-            currentUserId < friendUserId ? friendUsername : currentUsername,
-        };
+          const newConversation = {
+            _id: response.conversationId,
+            participant1:
+              currentUserId < friendUserId ? currentUserId : friendUserId,
+            participant2:
+              currentUserId < friendUserId ? friendUserId : currentUserId,
+            participant1Username:
+              currentUserId < friendUserId ? currentUsername : friendUsername,
+            participant2Username:
+              currentUserId < friendUserId ? friendUsername : currentUsername,
+          };
 
-        this.conversations.push(newConversation);
-        this.activeConversationId = response.conversationId;
-        this.messages[response.conversationId] = [];
+          this.conversations.push(newConversation);
+          this.activeConversationId = response.conversationId;
 
-        this.loading = false;
-        return newConversation;
+          // Initialize with empty messages array first
+          this.messages[response.conversationId] = [];
+
+          // Try to load messages, but don't fail if it doesn't work immediately
+          try {
+            await this.loadMessages(response.conversationId);
+          } catch (error) {
+            console.warn("Could not load messages for new conversation:", error);
+            // Continue anyway - messages array is already initialized as empty
+          }
+
+          this.loading = false;
+          return newConversation;
+        } else if (response.error && response.error.includes("already exists")) {
+          // Conversation exists on backend but not in local state
+          // Reload all conversations to get it
+          await this.loadConversations(currentUserId);
+
+          // Find the conversation again after reload
+          const conversation = this.conversations.find(
+            (c) =>
+              (c.participant1 === currentUserId &&
+                c.participant2 === friendUserId) ||
+              (c.participant1 === friendUserId &&
+                c.participant2 === currentUserId)
+          );
+
+          if (conversation) {
+            this.activeConversationId = conversation._id;
+            await this.loadMessages(conversation._id);
+            this.loading = false;
+            return conversation;
+          } else {
+            throw new Error("Failed to find existing conversation after reload");
+          }
+        } else if (response.error) {
+          throw new Error(response.error);
+        }
       } catch (error) {
         this.error = error.message;
         this.loading = false;
@@ -176,39 +240,77 @@ export const useMessagingStore = defineStore("messaging", {
       this.error = null;
 
       try {
-        const messagesData = await messagingService.getMessagesInConversation(
+        const authStore = useAuthStore();
+        const session = authStore.currentSession;
+
+        if (!session) {
+          throw new Error("No active session");
+        }
+
+        const response = await messagingService.getMessagesInConversation(
+          session,
           conversationId
         );
 
+        // Handle response format: { messages: MessageDoc[] } or direct array
+        let messagesData = [];
+        if (response && typeof response === 'object') {
+          if (Array.isArray(response.messages)) {
+            messagesData = response.messages;
+          } else if (response.error) {
+            throw new Error(response.error);
+          } else if (Array.isArray(response)) {
+            // Fallback: direct array
+            messagesData = response;
+          }
+        } else if (Array.isArray(response)) {
+          messagesData = response;
+        }
+
+        // Even if empty, set it (conversation might just have no messages yet)
         this.messages[conversationId] = messagesData;
         this.loading = false;
       } catch (error) {
+        console.error(`Error loading messages for conversation ${conversationId}:`, error);
         this.error = error.message;
         this.loading = false;
-        throw error;
+        // Don't throw - just set messages to empty array so UI can continue
+        this.messages[conversationId] = [];
       }
     },
 
     // Send a message
-    async sendMessage(conversationId, sender, content) {
+    async sendMessage(conversationId, content) {
       this.loading = true;
       this.error = null;
 
       try {
+        const authStore = useAuthStore();
+        const session = authStore.currentSession;
+
+        if (!session) {
+          throw new Error("No active session");
+        }
+
         const response = await messagingService.sendMessage(
+          session,
           conversationId,
-          sender,
           content
         );
 
-        // Add message to local state
-        if (!this.messages[conversationId]) {
-          this.messages[conversationId] = [];
-        }
-        this.messages[conversationId].push(response.message);
+        // Handle response
+        if (response.message) {
+          // Add message to local state
+          if (!this.messages[conversationId]) {
+            this.messages[conversationId] = [];
+          }
+          this.messages[conversationId].push(response.message);
 
-        this.loading = false;
-        return response.message;
+          this.loading = false;
+          return response.message;
+        } else if (response.error) {
+          throw new Error(response.error);
+        }
       } catch (error) {
         this.error = error.message;
         this.loading = false;

@@ -4,11 +4,11 @@ const MESSAGING_BASE = "/Messaging";
 
 export const messagingService = {
   // Create a new conversation between two users
-  async createConversation(user1, user2) {
+  async createConversation(session, user2) {
     try {
       const response = await apiClient.post(
         `${MESSAGING_BASE}/createConversation`,
-        { user1, user2 }
+        { session, user2 }
       );
       return response.data;
     } catch (error) {
@@ -19,11 +19,11 @@ export const messagingService = {
   },
 
   // Send a message in a conversation
-  async sendMessage(conversationId, sender, content) {
+  async sendMessage(session, conversationId, content) {
     try {
       const response = await apiClient.post(`${MESSAGING_BASE}/sendMessage`, {
+        session,
         conversationId,
-        sender,
         content,
       });
       return response.data;
@@ -33,11 +33,11 @@ export const messagingService = {
   },
 
   // Get a specific conversation by ID
-  async getConversation(conversationId) {
+  async getConversation(session, conversationId) {
     try {
       const response = await apiClient.post(
         `${MESSAGING_BASE}/_getConversation`,
-        { conversationId }
+        { session, conversationId }
       );
       return response.data;
     } catch (error) {
@@ -48,11 +48,11 @@ export const messagingService = {
   },
 
   // Get all messages in a conversation
-  async getMessagesInConversation(conversationId) {
+  async getMessagesInConversation(session, conversationId) {
     try {
       const response = await apiClient.post(
         `${MESSAGING_BASE}/_getMessagesInConversation`,
-        { conversationId }
+        { session, conversationId }
       );
       return response.data;
     } catch (error) {
@@ -62,12 +62,12 @@ export const messagingService = {
     }
   },
 
-  // Get all conversations for a user
-  async getConversationsForUser(user) {
+  // Get all conversations for a user (logged-in user)
+  async getConversationsForUser(session, user) {
     try {
       const response = await apiClient.post(
         `${MESSAGING_BASE}/_getConversationsForUser`,
-        { user }
+        { session, user }
       );
       return response.data;
     } catch (error) {
@@ -78,11 +78,11 @@ export const messagingService = {
   },
 
   // Get all conversations (admin/debug endpoint)
-  async getAllConversations() {
+  async getAllConversations(session) {
     try {
       const response = await apiClient.post(
         `${MESSAGING_BASE}/_getAllConversations`,
-        {}
+        { session }
       );
       return response.data;
     } catch (error) {
@@ -93,11 +93,11 @@ export const messagingService = {
   },
 
   // Get message details by ID (admin/debug endpoint)
-  async getMessageDetails(messageId) {
+  async getMessageDetails(session, messageId) {
     try {
       const response = await apiClient.post(
         `${MESSAGING_BASE}/_getMessageDetails`,
-        { messageId }
+        { session, messageId }
       );
       return response.data;
     } catch (error) {
@@ -108,11 +108,11 @@ export const messagingService = {
   },
 
   // Get all messages (admin/debug endpoint)
-  async getAllMessages() {
+  async getAllMessages(session) {
     try {
       const response = await apiClient.post(
         `${MESSAGING_BASE}/_getAllMessages`,
-        {}
+        { session }
       );
       return response.data;
     } catch (error) {

@@ -119,7 +119,6 @@ const handleSendMessage = async (content) => {
   try {
     await messagingStore.sendMessage(
       activeConversation.value._id,
-      currentUser.value,
       content.trim()
     );
   } catch (error) {
