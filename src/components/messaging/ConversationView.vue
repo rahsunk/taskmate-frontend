@@ -96,37 +96,16 @@ const otherParticipantName = computed(() => {
   return otherParticipant.username;
 });
 
-// Format timestamp
+// Format timestamp - shows date (month/day) and time
 const formatTime = (timestamp) => {
   const date = new Date(timestamp);
-  const now = new Date();
-  const diffInHours = (now - date) / (1000 * 60 * 60);
-
-  if (diffInHours < 24) {
-    // Show time if within last 24 hours
-    return date.toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
-  } else if (diffInHours < 168) {
-    // Show day of week if within last week
-    return date.toLocaleDateString("en-US", {
-      weekday: "short",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
-  } else {
-    // Show full date
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
-  }
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
 };
 
 // Scroll to bottom of messages
