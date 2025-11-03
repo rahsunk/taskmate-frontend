@@ -8,15 +8,7 @@
       </p>
     </div>
 
-    <div v-if="!hasSchedule" class="no-schedule">
-      <div class="no-schedule-icon">📅</div>
-      <p>No schedule generated yet</p>
-      <p class="no-schedule-subtitle">
-        Add some events and tasks, then click "Generate Schedule"
-      </p>
-    </div>
-
-    <div v-else class="schedule-container">
+    <div class="schedule-container">
       <div class="schedule-grid">
         <!-- Time column header -->
         <div class="time-column">
@@ -116,27 +108,23 @@ const hasSchedule = computed(() => {
 });
 
 const scheduleDays = computed(() => {
-  if (!hasSchedule.value) return [];
-
-  const days = new Map();
+  const days = [];
   const today = new Date();
+  today.setHours(0, 0, 0, 0); // Reset to start of day
 
-  // Get all unique dates from the schedule
-  scheduleStore.generatedSchedule.forEach((item) => {
-    const date = new Date(item.scheduledStartTime);
-    const dateKey = date.toDateString();
+  // Generate 8 consecutive days starting from today
+  for (let i = 0; i < 8; i++) {
+    const currentDay = new Date(today);
+    currentDay.setDate(today.getDate() + i);
 
-    if (!days.has(dateKey)) {
-      days.set(dateKey, {
-        date: dateKey,
-        name: date.toLocaleDateString("en-US", { weekday: "short" }),
-        fullDate: new Date(date),
-      });
-    }
-  });
+    days.push({
+      date: currentDay.toDateString(),
+      name: currentDay.toLocaleDateString("en-US", { weekday: "short" }),
+      fullDate: new Date(currentDay),
+    });
+  }
 
-  // Convert to array and sort by date
-  return Array.from(days.values()).sort((a, b) => a.fullDate - b.fullDate);
+  return days;
 });
 
 const formatHour = (hour) => {
@@ -285,7 +273,7 @@ const getItemTooltip = (item) => {
 
 .schedule-grid {
   display: grid;
-  grid-template-columns: 80px repeat(auto-fit, minmax(50px, 1fr));
+  grid-template-columns: 80px repeat(8, 1fr);
   gap: 1px;
   background: #e9ecef;
   border-radius: 8px;
