@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { scheduleGeneratorService } from "../services/scheduleGeneratorService.js";
+import { useAuthStore } from "./authStore.js";
 
 export const useScheduleStore = defineStore("schedule", {
   state: () => ({
@@ -50,14 +51,21 @@ export const useScheduleStore = defineStore("schedule", {
 
   actions: {
     // Initialize schedule for a user (gets or creates backend schedule)
-    async initializeSchedule(owner) {
+    async initializeSchedule() {
       this.loading = true;
       this.error = null;
 
       try {
-        // Get or create schedule for user
+        const authStore = useAuthStore();
+        const session = authStore.currentSession;
+
+        if (!session) {
+          throw new Error("No active session");
+        }
+
+        // Get or create schedule for user (session determines owner)
         const response = await scheduleGeneratorService.initializeSchedule(
-          owner
+          session
         );
         this.scheduleId = response.schedule;
 
@@ -78,55 +86,48 @@ export const useScheduleStore = defineStore("schedule", {
       }
 
       try {
-        // Load events - returns array of {event: "id"}
+        const authStore = useAuthStore();
+        const session = authStore.currentSession;
+
+        if (!session) {
+          throw new Error("No active session");
+        }
+
+        // Load events - now returns { events: [EventDoc, EventDoc, ...] }
         const eventsResponse =
-          await scheduleGeneratorService.getEventsForSchedule(this.scheduleId);
+          await scheduleGeneratorService.getEventsForSchedule(
+            session,
+            this.scheduleId
+          );
 
         console.log("Events response:", eventsResponse);
 
-        // Fetch full details for each event
-
-        if (
-          Array.isArray(eventsResponse.event) &&
-          eventsResponse.event.length > 0
-        ) {
-          const eventPromises = eventsResponse.event.map((event) =>
-            scheduleGeneratorService.getEventDetails(event)
-          );
-          const eventDetailsArray = await Promise.all(eventPromises);
-
-          // Map event details to include id field for frontend
-          this.events = eventDetailsArray.map((detail) => ({
-            id: detail.eventDetails[0]._id || detail.eventDetails[0].event,
-            ...detail.eventDetails[0],
+        // Process events array directly - each item is a full EventDoc
+        if (Array.isArray(eventsResponse.events) && eventsResponse.events.length > 0) {
+          this.events = eventsResponse.events.map((eventDoc) => ({
+            id: eventDoc._id,
+            ...eventDoc,
+            // Ensure repeat property exists with default value
+            repeat: eventDoc.repeat || { frequency: "NONE", daysOfWeek: [] },
           }));
         } else {
           this.events = [];
         }
 
-        // Load tasks - returns array of {task: "id"}
+        // Load tasks - now returns { tasks: [TaskDoc, TaskDoc, ...] }
         const tasksResponse =
-          await scheduleGeneratorService.getTasksForSchedule(this.scheduleId);
-
-        console.log("Tasks response:", tasksResponse);
-        // console.log(tasksResponse);
-
-        // Fetch full details for each task
-        if (
-          Array.isArray(tasksResponse.task) &&
-          tasksResponse.task.length > 0
-        ) {
-          const taskPromises = tasksResponse.task.map((task) =>
-            scheduleGeneratorService.getTaskDetails(task)
+          await scheduleGeneratorService.getTasksForSchedule(
+            session,
+            this.scheduleId
           );
 
-          const taskDetailsArray = await Promise.all(taskPromises);
-          // console.log(taskDetailsArray);
+        console.log("Tasks response:", tasksResponse);
 
-          // Map task details to include id field for frontend
-          this.tasks = taskDetailsArray.map((detail) => ({
-            id: detail.taskDetails[0]._id || detail.taskDetails[0].task,
-            ...detail.taskDetails[0],
+        // Process tasks array directly - each item is a full TaskDoc
+        if (Array.isArray(tasksResponse.tasks) && tasksResponse.tasks.length > 0) {
+          this.tasks = tasksResponse.tasks.map((taskDoc) => ({
+            id: taskDoc._id,
+            ...taskDoc,
           }));
         } else {
           this.tasks = [];
@@ -151,8 +152,16 @@ export const useScheduleStore = defineStore("schedule", {
       this.error = null;
 
       try {
+        const authStore = useAuthStore();
+        const session = authStore.currentSession;
+
+        if (!session) {
+          throw new Error("No active session");
+        }
+
         console.log("Adding event with data:", eventData);
         const response = await scheduleGeneratorService.addEvent(
+          session,
           this.scheduleId,
           eventData.name,
           eventData.startTime,
@@ -189,7 +198,15 @@ export const useScheduleStore = defineStore("schedule", {
       this.error = null;
 
       try {
+        const authStore = useAuthStore();
+        const session = authStore.currentSession;
+
+        if (!session) {
+          throw new Error("No active session");
+        }
+
         await scheduleGeneratorService.editEvent(
+          session,
           this.scheduleId,
           eventId,
           eventData.name,
@@ -218,7 +235,18 @@ export const useScheduleStore = defineStore("schedule", {
       this.error = null;
 
       try {
-        await scheduleGeneratorService.deleteEvent(this.scheduleId, eventId);
+        const authStore = useAuthStore();
+        const session = authStore.currentSession;
+
+        if (!session) {
+          throw new Error("No active session");
+        }
+
+        await scheduleGeneratorService.deleteEvent(
+          session,
+          this.scheduleId,
+          eventId
+        );
 
         // Reload events from backend
         await this.loadScheduleData();
@@ -240,7 +268,15 @@ export const useScheduleStore = defineStore("schedule", {
       this.error = null;
 
       try {
+        const authStore = useAuthStore();
+        const session = authStore.currentSession;
+
+        if (!session) {
+          throw new Error("No active session");
+        }
+
         const response = await scheduleGeneratorService.addTask(
+          session,
           this.scheduleId,
           taskData.name,
           taskData.deadline,
@@ -271,7 +307,15 @@ export const useScheduleStore = defineStore("schedule", {
       this.error = null;
 
       try {
+        const authStore = useAuthStore();
+        const session = authStore.currentSession;
+
+        if (!session) {
+          throw new Error("No active session");
+        }
+
         await scheduleGeneratorService.editTask(
+          session,
           this.scheduleId,
           taskId,
           taskData.name,
@@ -301,7 +345,18 @@ export const useScheduleStore = defineStore("schedule", {
       this.error = null;
 
       try {
-        await scheduleGeneratorService.deleteTask(this.scheduleId, taskId);
+        const authStore = useAuthStore();
+        const session = authStore.currentSession;
+
+        if (!session) {
+          throw new Error("No active session");
+        }
+
+        await scheduleGeneratorService.deleteTask(
+          session,
+          this.scheduleId,
+          taskId
+        );
 
         // Reload tasks from backend
         await this.loadScheduleData();
@@ -336,7 +391,15 @@ export const useScheduleStore = defineStore("schedule", {
       this.error = null;
 
       try {
+        const authStore = useAuthStore();
+        const session = authStore.currentSession;
+
+        if (!session) {
+          throw new Error("No active session");
+        }
+
         const response = await scheduleGeneratorService.generateSchedule(
+          session,
           this.scheduleId
         );
         this.generatedSchedule = response.generatedPlan || response;

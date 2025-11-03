@@ -231,7 +231,7 @@ onMounted(async () => {
 
   try {
     console.log("Initializing schedule for user:", currentUser);
-    await scheduleStore.initializeSchedule(currentUser);
+    await scheduleStore.initializeSchedule();
     console.log("Schedule initialized, scheduleId:", scheduleStore.scheduleId);
   } catch (error) {
     console.error("Error initializing schedule in ScheduleManager:", error);

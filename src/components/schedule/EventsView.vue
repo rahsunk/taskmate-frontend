@@ -57,7 +57,7 @@
             </div>
           </div>
 
-          <div v-if="event.repeat.frequency !== 'none'" class="repeat-info">
+          <div v-if="event.repeat.frequency !== 'NONE' && event.repeat.frequency !== 'none'" class="repeat-info">
             <span class="repeat-label">Repeats:</span>
             <span class="repeat-value">{{ formatRepeat(event.repeat) }}</span>
           </div>
@@ -97,10 +97,11 @@ const formatDateTime = (dateTimeString) => {
 };
 
 const formatRepeat = (repeat) => {
-  if (repeat.frequency === "none") return "No repeat";
+  const freq = repeat.frequency?.toUpperCase();
 
-  if (repeat.frequency === "daily") return "Daily";
-  if (repeat.frequency === "weekly") {
+  if (freq === "NONE") return "No repeat";
+  if (freq === "DAILY") return "Daily";
+  if (freq === "WEEKLY") {
     if (repeat.daysOfWeek && repeat.daysOfWeek.length > 0) {
       const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
       const selectedDays = repeat.daysOfWeek.map((day) => days[day]).join(", ");
@@ -108,7 +109,7 @@ const formatRepeat = (repeat) => {
     }
     return "Weekly";
   }
-  if (repeat.frequency === "monthly") return "Monthly";
+  if (freq === "MONTHLY") return "Monthly";
 
   return repeat.frequency;
 };

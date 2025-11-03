@@ -4,11 +4,11 @@ const SCHEDULE_GENERATOR_BASE = "/ScheduleGenerator";
 
 export const scheduleGeneratorService = {
   // Initialize or get existing schedule for a user
-  async initializeSchedule(owner) {
+  async initializeSchedule(session) {
     try {
       const response = await apiClient.post(
         `${SCHEDULE_GENERATOR_BASE}/initializeSchedule`,
-        { owner }
+        { session }
       );
       return response.data;
     } catch (error) {
@@ -18,12 +18,12 @@ export const scheduleGeneratorService = {
     }
   },
 
-  // Get schedule by owner
-  async getScheduleByOwner(owner) {
+  // Get schedule by owner (uses session to get current user's schedule)
+  async getScheduleByOwner(session) {
     try {
       const response = await apiClient.post(
         `${SCHEDULE_GENERATOR_BASE}/_getScheduleByOwner`,
-        { owner }
+        { session }
       );
       return response.data;
     } catch (error) {
@@ -34,11 +34,12 @@ export const scheduleGeneratorService = {
   },
 
   // Add an event to schedule
-  async addEvent(schedule, name, startTime, endTime, repeat) {
+  async addEvent(session, schedule, name, startTime, endTime, repeat) {
     try {
       const response = await apiClient.post(
         `${SCHEDULE_GENERATOR_BASE}/addEvent`,
         {
+          session,
           schedule,
           name,
           startTime,
@@ -53,11 +54,12 @@ export const scheduleGeneratorService = {
   },
 
   // Edit an event
-  async editEvent(schedule, oldEvent, name, startTime, endTime, repeat) {
+  async editEvent(session, schedule, oldEvent, name, startTime, endTime, repeat) {
     try {
       const response = await apiClient.post(
         `${SCHEDULE_GENERATOR_BASE}/editEvent`,
         {
+          session,
           schedule,
           oldEvent,
           name,
@@ -73,11 +75,12 @@ export const scheduleGeneratorService = {
   },
 
   // Delete an event
-  async deleteEvent(schedule, event) {
+  async deleteEvent(session, schedule, event) {
     try {
       const response = await apiClient.post(
         `${SCHEDULE_GENERATOR_BASE}/deleteEvent`,
         {
+          session,
           schedule,
           event,
         }
@@ -90,6 +93,7 @@ export const scheduleGeneratorService = {
 
   // Add a task to schedule
   async addTask(
+    session,
     schedule,
     name,
     deadline,
@@ -101,6 +105,7 @@ export const scheduleGeneratorService = {
       const response = await apiClient.post(
         `${SCHEDULE_GENERATOR_BASE}/addTask`,
         {
+          session,
           schedule,
           name,
           deadline,
@@ -117,6 +122,7 @@ export const scheduleGeneratorService = {
 
   // Edit a task
   async editTask(
+    session,
     schedule,
     oldTask,
     name,
@@ -129,6 +135,7 @@ export const scheduleGeneratorService = {
       const response = await apiClient.post(
         `${SCHEDULE_GENERATOR_BASE}/editTask`,
         {
+          session,
           schedule,
           oldTask,
           name,
@@ -145,11 +152,12 @@ export const scheduleGeneratorService = {
   },
 
   // Delete a task
-  async deleteTask(schedule, task) {
+  async deleteTask(session, schedule, task) {
     try {
       const response = await apiClient.post(
         `${SCHEDULE_GENERATOR_BASE}/deleteTask`,
         {
+          session,
           schedule,
           task,
         }
@@ -161,11 +169,11 @@ export const scheduleGeneratorService = {
   },
 
   // Generate schedule
-  async generateSchedule(schedule) {
+  async generateSchedule(session, schedule) {
     try {
       const response = await apiClient.post(
         `${SCHEDULE_GENERATOR_BASE}/generateSchedule`,
-        { schedule }
+        { session, schedule }
       );
       return response.data;
     } catch (error) {
@@ -176,11 +184,11 @@ export const scheduleGeneratorService = {
   },
 
   // Query: Get events for schedule
-  async getEventsForSchedule(schedule) {
+  async getEventsForSchedule(session, schedule) {
     try {
       const response = await apiClient.post(
         `${SCHEDULE_GENERATOR_BASE}/_getEventsForSchedule`,
-        { schedule }
+        { session, schedule }
       );
       return response.data;
     } catch (error) {
@@ -191,11 +199,11 @@ export const scheduleGeneratorService = {
   },
 
   // Query: Get tasks for schedule
-  async getTasksForSchedule(schedule) {
+  async getTasksForSchedule(session, schedule) {
     try {
       const response = await apiClient.post(
         `${SCHEDULE_GENERATOR_BASE}/_getTasksForSchedule`,
-        { schedule }
+        { session, schedule }
       );
       return response.data;
     } catch (error) {
@@ -206,11 +214,11 @@ export const scheduleGeneratorService = {
   },
 
   // Query: Get event details
-  async getEventDetails(event) {
+  async getEventDetails(session, event) {
     try {
       const response = await apiClient.post(
         `${SCHEDULE_GENERATOR_BASE}/_getEventDetails`,
-        { event }
+        { session, event }
       );
       return response.data;
     } catch (error) {
@@ -221,11 +229,11 @@ export const scheduleGeneratorService = {
   },
 
   // Query: Get task details
-  async getTaskDetails(task) {
+  async getTaskDetails(session, task) {
     try {
       const response = await apiClient.post(
         `${SCHEDULE_GENERATOR_BASE}/_getTaskDetails`,
-        { task }
+        { session, task }
       );
       return response.data;
     } catch (error) {
@@ -236,11 +244,11 @@ export const scheduleGeneratorService = {
   },
 
   // Query: Get schedule details
-  async getScheduleDetails(schedule) {
+  async getScheduleDetails(session, schedule) {
     try {
       const response = await apiClient.post(
         `${SCHEDULE_GENERATOR_BASE}/_getScheduleDetails`,
-        { schedule }
+        { session, schedule }
       );
       return response.data;
     } catch (error) {
@@ -251,11 +259,11 @@ export const scheduleGeneratorService = {
   },
 
   // Query: Get all schedules
-  async getAllSchedules() {
+  async getAllSchedules(session) {
     try {
       const response = await apiClient.post(
         `${SCHEDULE_GENERATOR_BASE}/_getAllSchedules`,
-        {}
+        { session }
       );
       return response.data;
     } catch (error) {
@@ -266,11 +274,11 @@ export const scheduleGeneratorService = {
   },
 
   // Query: Get all events
-  async getAllEvents() {
+  async getAllEvents(session) {
     try {
       const response = await apiClient.post(
         `${SCHEDULE_GENERATOR_BASE}/_getAllEvents`,
-        {}
+        { session }
       );
       return response.data;
     } catch (error) {
@@ -281,11 +289,11 @@ export const scheduleGeneratorService = {
   },
 
   // Query: Get all tasks
-  async getAllTasks() {
+  async getAllTasks(session) {
     try {
       const response = await apiClient.post(
         `${SCHEDULE_GENERATOR_BASE}/_getAllTasks`,
-        {}
+        { session }
       );
       return response.data;
     } catch (error) {

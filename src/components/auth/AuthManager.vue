@@ -107,7 +107,7 @@ const handleAuthSuccess = async () => {
 
   try {
     console.log("Initializing schedule for user:", currentUser.value);
-    await scheduleStore.initializeSchedule(currentUser.value);
+    await scheduleStore.initializeSchedule();
     console.log(
       "Schedule initialized successfully, scheduleId:",
       scheduleStore.scheduleId
@@ -137,7 +137,7 @@ onMounted(async () => {
   // If user is already authenticated, initialize their schedule and show it
   if (isAuthenticated.value) {
     try {
-      await scheduleStore.initializeSchedule(currentUser.value);
+      await scheduleStore.initializeSchedule();
       currentView.value = "schedule";
     } catch (error) {
       console.error("Error initializing schedule:", error);
