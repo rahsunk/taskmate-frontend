@@ -46,18 +46,24 @@
             <div class="time-item">
               <span class="time-label">Start:</span>
               <span class="time-value">{{
-                formatDateTime(event.startTime)
+                formatDateTime(event.repeat.frequency, event.startTime)
               }}</span>
             </div>
             <div class="time-item">
               <span class="time-label">End:</span>
               <span class="time-value">{{
-                formatDateTime(event.endTime)
+                formatDateTime(event.repeat.frequency, event.endTime)
               }}</span>
             </div>
           </div>
 
-          <div v-if="event.repeat.frequency !== 'NONE' && event.repeat.frequency !== 'none'" class="repeat-info">
+          <div
+            v-if="
+              event.repeat.frequency !== 'NONE' &&
+              event.repeat.frequency !== 'none'
+            "
+            class="repeat-info"
+          >
             <span class="repeat-label">Repeats:</span>
             <span class="repeat-value">{{ formatRepeat(event.repeat) }}</span>
           </div>
@@ -85,7 +91,11 @@ const scheduleStore = useScheduleStore();
 const events = computed(() => scheduleStore.allEvents);
 const sortedEvents = computed(() => scheduleStore.sortedEvents);
 
-const formatDateTime = (dateTimeString) => {
+const formatDateTime = (frequency, dateTimeString) => {
+  if (frequency !== "NONE") {
+    return dateTimeString.slice(-5);
+  }
+
   const date = new Date(dateTimeString);
   return date.toLocaleString("en-US", {
     weekday: "short",
@@ -130,7 +140,7 @@ const getDuration = (startTime, endTime) => {
 const isPastEvent = (event) => {
   const now = new Date();
   const eventEnd = new Date(event.endTime);
-  return eventEnd < now;
+  return eventEnd < now && event.repeat === "NONE";
 };
 
 const editEvent = (event) => {
