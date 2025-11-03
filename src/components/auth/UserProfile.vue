@@ -53,6 +53,20 @@
             New passwords do not match
           </div>
 
+          <div
+            v-if="passwordChangeMessage && passwordChangeIsError"
+            class="error-message"
+          >
+            {{ passwordChangeMessage }}
+          </div>
+
+          <div
+            v-if="passwordChangeMessage && !passwordChangeIsError"
+            class="success-message"
+          >
+            {{ passwordChangeMessage }}
+          </div>
+
           <button
             class="change-password"
             type="submit"
@@ -131,6 +145,8 @@ const passwordForm = ref({
 
 const showDeleteConfirmation = ref(false);
 const successMessage = ref("");
+const passwordChangeMessage = ref("");
+const passwordChangeIsError = ref(false);
 
 const user = computed(() => authStore.currentUsername);
 const loading = computed(() => authStore.isLoading);
@@ -158,22 +174,48 @@ const handleChangePassword = async () => {
     return;
   }
 
+  // Clear previous message
+  passwordChangeMessage.value = "";
+  passwordChangeIsError.value = false;
+
   try {
-    await authStore.changePassword(
+    const result = await authStore.changePassword(
       passwordForm.value.oldPassword,
       passwordForm.value.newPassword
     );
-    passwordForm.value = {
-      oldPassword: "",
-      newPassword: "",
-      confirmNewPassword: "",
-    };
-    successMessage.value = "Password changed successfully!";
-    setTimeout(() => {
-      successMessage.value = "";
-    }, 3000);
+
+    // Check if response has status (success) or error
+    if (result.status) {
+      // Success message
+      passwordChangeMessage.value = "Password succesfully changed!";
+      passwordChangeIsError.value = false;
+      // Clear form on success
+      passwordForm.value = {
+        oldPassword: "",
+        newPassword: "",
+        confirmNewPassword: "",
+      };
+      // Clear message after 3 seconds
+      setTimeout(() => {
+        passwordChangeMessage.value = "";
+      }, 3000);
+    } else if (result.error) {
+      // Error message from API
+      passwordChangeMessage.value = result.error;
+      passwordChangeIsError.value = true;
+      // Clear message after 5 seconds
+      setTimeout(() => {
+        passwordChangeMessage.value = "";
+      }, 5000);
+    }
   } catch (err) {
     console.error("Password change failed:", err);
+    // Display generic error
+    passwordChangeMessage.value = err.message || "Password change failed";
+    passwordChangeIsError.value = true;
+    setTimeout(() => {
+      passwordChangeMessage.value = "";
+    }, 5000);
   }
 };
 

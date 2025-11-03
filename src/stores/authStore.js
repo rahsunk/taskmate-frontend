@@ -175,14 +175,16 @@ export const useAuthStore = defineStore("auth", {
       this.error = null;
 
       try {
-        await userAuthService.changePassword(
+        const result = await userAuthService.changePassword(
           this.session,
           this.user,
           oldPassword,
           newPassword
         );
-        return true;
+        // Return the result (either { status: "message" } or { error: "message" })
+        return result;
       } catch (error) {
+        // Only set error if it's not an API response
         this.error = error.message;
         throw error;
       } finally {

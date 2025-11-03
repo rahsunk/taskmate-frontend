@@ -90,9 +90,14 @@ export const userAuthService = {
           newPassword,
         }
       );
+      // Return the actual API response (either { status: "message" } or { error: "message" })
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.error || "Password change failed");
+      // Return the error response from the API
+      if (error.response?.data) {
+        return error.response.data;
+      }
+      throw new Error("Password change failed");
     }
   },
 
