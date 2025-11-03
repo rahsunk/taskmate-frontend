@@ -5,6 +5,7 @@ export const useAuthStore = defineStore("auth", {
   state: () => ({
     user: null,
     username: null,
+    session: null, // Add session to state
     isAuthenticated: false,
     loading: false,
     error: null,
@@ -13,6 +14,7 @@ export const useAuthStore = defineStore("auth", {
   getters: {
     currentUser: (state) => state.user,
     currentUsername: (state) => state.username,
+    currentSession: (state) => state.session, // Add session getter
     isLoggedIn: (state) => state.isAuthenticated,
     isLoading: (state) => state.loading,
     authError: (state) => state.error,
@@ -23,24 +25,34 @@ export const useAuthStore = defineStore("auth", {
     async initializeAuth() {
       const savedUser = localStorage.getItem("user");
       const savedUsername = localStorage.getItem("username");
-      if (savedUser) {
+      const savedSession = localStorage.getItem("session");
+
+      if (savedUser && savedSession) {
         try {
           const userData = JSON.parse(savedUser);
+          const sessionData = JSON.parse(savedSession);
 
-          // Validate that we have a user ID
+          // Validate that we have a user ID and session
           if (!userData || typeof userData !== "string" || userData.trim() === "") {
             console.warn("Invalid user data in localStorage, clearing session");
             this.logout();
             return;
           }
 
+          if (!sessionData || typeof sessionData !== "string" || sessionData.trim() === "") {
+            console.warn("Invalid session data in localStorage, clearing session");
+            this.logout();
+            return;
+          }
+
           // Verify user still exists in the backend
           try {
-            const checkResult = await userAuthService.checkUserExists(userData);
-            // API returns array with { exists: boolean }
-            if (Array.isArray(checkResult) && checkResult.length > 0 && checkResult[0]?.exists) {
+            const checkResult = await userAuthService.checkUserExists(userData, sessionData);
+            // API returns { exists: boolean }
+            if (checkResult && checkResult.exists) {
               this.user = userData;
               this.username = savedUsername ? JSON.parse(savedUsername) : null;
+              this.session = sessionData;
               this.isAuthenticated = true;
             } else {
               console.warn("User no longer exists in backend, clearing session");
@@ -76,18 +88,20 @@ export const useAuthStore = defineStore("auth", {
 
         const response = await userAuthService.authenticate(trimmedUsername, password);
 
-        // Validate response
-        if (!response || !response.user) {
+        // Validate response - now expects both user and session
+        if (!response || !response.user || !response.session) {
           throw new Error("Invalid authentication response from server");
         }
 
         this.user = response.user;
         this.username = trimmedUsername;
+        this.session = response.session;
         this.isAuthenticated = true;
 
         // Save to localStorage
         localStorage.setItem("user", JSON.stringify(response.user));
         localStorage.setItem("username", JSON.stringify(trimmedUsername));
+        localStorage.setItem("session", JSON.stringify(response.session));
 
         return response;
       } catch (error) {
@@ -95,6 +109,7 @@ export const useAuthStore = defineStore("auth", {
         this.isAuthenticated = false;
         this.user = null;
         this.username = null;
+        this.session = null;
         throw error;
       } finally {
         this.loading = false;
@@ -122,18 +137,20 @@ export const useAuthStore = defineStore("auth", {
 
         const response = await userAuthService.register(trimmedUsername, password);
 
-        // Validate response
-        if (!response || !response.user) {
+        // Validate response - now expects both user and session
+        if (!response || !response.user || !response.session) {
           throw new Error("Invalid registration response from server");
         }
 
         this.user = response.user;
         this.username = trimmedUsername;
+        this.session = response.session;
         this.isAuthenticated = true;
 
         // Save to localStorage
         localStorage.setItem("user", JSON.stringify(response.user));
         localStorage.setItem("username", JSON.stringify(trimmedUsername));
+        localStorage.setItem("session", JSON.stringify(response.session));
 
         return response;
       } catch (error) {
@@ -141,6 +158,7 @@ export const useAuthStore = defineStore("auth", {
         this.isAuthenticated = false;
         this.user = null;
         this.username = null;
+        this.session = null;
         throw error;
       } finally {
         this.loading = false;
@@ -149,7 +167,7 @@ export const useAuthStore = defineStore("auth", {
 
     // Change password
     async changePassword(oldPassword, newPassword) {
-      if (!this.user) {
+      if (!this.user || !this.session) {
         throw new Error("No user logged in");
       }
 
@@ -158,6 +176,7 @@ export const useAuthStore = defineStore("auth", {
 
       try {
         await userAuthService.changePassword(
+          this.session,
           this.user,
           oldPassword,
           newPassword
@@ -173,7 +192,7 @@ export const useAuthStore = defineStore("auth", {
 
     // Delete account
     async deleteAccount() {
-      if (!this.user) {
+      if (!this.user || !this.session) {
         throw new Error("No user logged in");
       }
 
@@ -181,7 +200,7 @@ export const useAuthStore = defineStore("auth", {
       this.error = null;
 
       try {
-        await userAuthService.deleteAccount(this.user);
+        await userAuthService.deleteAccount(this.session, this.user);
         this.logout();
         return true;
       } catch (error) {
@@ -196,10 +215,12 @@ export const useAuthStore = defineStore("auth", {
     logout() {
       this.user = null;
       this.username = null;
+      this.session = null;
       this.isAuthenticated = false;
       this.error = null;
       localStorage.removeItem("user");
       localStorage.removeItem("username");
+      localStorage.removeItem("session");
     },
 
     // Clear error

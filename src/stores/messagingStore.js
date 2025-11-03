@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { messagingService } from "../services/messagingService.js";
 import { userAuthService } from "../services/userAuthService.js";
+import { useAuthStore } from "./authStore.js";
 
 export const useMessagingStore = defineStore("messaging", {
   state: () => ({
@@ -37,16 +38,24 @@ export const useMessagingStore = defineStore("messaging", {
       }
 
       try {
-        const response = await userAuthService.getUsernameById(userId);
+        const authStore = useAuthStore();
+        const session = authStore.currentSession;
+
+        if (!session) {
+          console.warn("No session available for getUsernameById");
+          return userId; // Fallback if no session
+        }
+
+        const response = await userAuthService.getUsernameById(userId, session);
+        console.log(`getUsernameById response for ${userId}:`, response);
+        // API returns { username: string } or empty object
         let username;
-        if (typeof response === "string") {
-          username = response;
-        } else if (response.username) {
+        if (response && response.username) {
           username = response.username;
-        } else if (response.user && response.user.username) {
-          username = response.user.username;
+          console.log(`Successfully got username: ${username} for userId: ${userId}`);
         } else {
-          username = userId;
+          console.warn(`Falling back to userId for ${userId}. Response:`, response);
+          username = userId; // Fallback if not found
         }
         this.usernameCache[userId] = username;
         return username;

@@ -302,6 +302,7 @@ const getItemTooltip = (item) => {
   padding: 1rem;
   font-weight: 600;
   text-align: center;
+  height: 12vh;
 }
 
 .time-slot {
@@ -337,6 +338,7 @@ const getItemTooltip = (item) => {
   padding: 1rem;
   text-align: center;
   font-weight: 600;
+  height: 12vh;
 }
 
 .day-name {

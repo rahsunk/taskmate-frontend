@@ -79,11 +79,12 @@ export const userAuthService = {
   },
 
   // Change user password
-  async changePassword(user, oldPassword, newPassword) {
+  async changePassword(session, user, oldPassword, newPassword) {
     try {
       const response = await apiClient.post(
         `${USER_AUTH_BASE}/changePassword`,
         {
+          session,
           user,
           oldPassword,
           newPassword,
@@ -96,9 +97,10 @@ export const userAuthService = {
   },
 
   // Delete user account
-  async deleteAccount(user) {
+  async deleteAccount(session, user) {
     try {
       const response = await apiClient.post(`${USER_AUTH_BASE}/deleteAccount`, {
+        session,
         user,
       });
       return response.data;
@@ -123,11 +125,12 @@ export const userAuthService = {
   },
 
   // Check if user exists (Backend uses POST for all endpoints)
-  async checkUserExists(user) {
+  async checkUserExists(user, session) {
     try {
       const response = await apiClient.post(
         `${USER_AUTH_BASE}/_checkUserExists`,
         {
+          session,
           user,
         }
       );
@@ -149,25 +152,13 @@ export const userAuthService = {
     }
   },
 
-  // Get user by ID (Backend uses POST for all endpoints)
-  async getUserById(userId) {
-    try {
-      const response = await apiClient.post(
-        `${USER_AUTH_BASE}/users/${userId}`,
-        {}
-      );
-      return response.data;
-    } catch (error) {
-      throw new Error(error.response?.data?.error || "Failed to fetch user");
-    }
-  },
-
   // Get username from user ID
-  async getUsernameById(userId) {
+  async getUsernameById(userId, session) {
     try {
       const response = await apiClient.post(
         `${USER_AUTH_BASE}/_getUsernameById`,
         {
+          session,
           user: userId,
         }
       );

@@ -53,7 +53,11 @@
             New passwords do not match
           </div>
 
-          <button type="submit" :disabled="loading || !isPasswordFormValid">
+          <button
+            class="change-password"
+            type="submit"
+            :disabled="loading || !isPasswordFormValid"
+          >
             {{ loading ? "Changing password..." : "Change Password" }}
           </button>
         </form>
@@ -177,7 +181,8 @@ const handleDeleteAccount = async () => {
   try {
     await authStore.deleteAccount();
     // Show success message briefly before navigating to login
-    successMessage.value = "Account deleted successfully. Redirecting to login...";
+    successMessage.value =
+      "Account deleted successfully. Redirecting to login...";
     showDeleteConfirmation.value = false;
 
     // Small delay to show the success message, then navigate
@@ -296,6 +301,7 @@ button:disabled {
 .delete-button {
   background-color: #dc3545;
   color: white;
+  margin-bottom: 2vh;
 }
 
 .delete-button:hover:not(:disabled) {
@@ -350,6 +356,27 @@ button:disabled {
   padding: 0.75rem;
   margin-bottom: 1rem;
   font-size: 0.9rem;
+}
+
+button {
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+button:hover:not(:disabled) {
+  background-color: #0056b3;
+}
+
+button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
 }
 
 .success-message {

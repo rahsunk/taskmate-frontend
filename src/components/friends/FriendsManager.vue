@@ -2,9 +2,7 @@
   <div class="friends-manager">
     <div class="friends-header">
       <h2>Friends</h2>
-      <p class="friends-description">
-        Manage your friends and friend requests
-      </p>
+      <p class="friends-description">Manage your friends and friend requests</p>
     </div>
 
     <!-- Tabs -->

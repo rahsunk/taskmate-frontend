@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { friendListService } from "../services/friendListService.js";
 import { userAuthService } from "../services/userAuthService.js";
+import { useAuthStore } from "./authStore.js";
 
 export const useFriendStore = defineStore("friend", {
   state: () => ({
@@ -29,17 +30,24 @@ export const useFriendStore = defineStore("friend", {
       }
 
       try {
-        const response = await userAuthService.getUsernameById(userId);
-        // Extract username from the user object
+        const authStore = useAuthStore();
+        const session = authStore.currentSession;
+
+        if (!session) {
+          console.warn("No session available for getUsernameById");
+          return userId; // Fallback if no session
+        }
+
+        const response = await userAuthService.getUsernameById(userId, session);
+        console.log(`getUsernameById response for ${userId}:`, response);
+        // API returns { username: string } or empty object
         let username;
-        if (typeof response === "string") {
-          username = response;
-        } else if (response.username) {
+        if (response && response.username) {
           username = response.username;
-        } else if (response.user && response.user.username) {
-          username = response.user.username;
+          console.log(`Successfully got username: ${username} for userId: ${userId}`);
         } else {
-          username = userId;
+          console.warn(`Falling back to userId for ${userId}. Response:`, response);
+          username = userId; // Fallback if not found
         }
         this.usernameCache[userId] = username;
         return username;
@@ -53,8 +61,16 @@ export const useFriendStore = defineStore("friend", {
     async getUserIdByUsername(username) {
       try {
         const response = await userAuthService.getUserByUsername(username);
-        return response._id || response.user;
+        console.log(`getUserByUsername response for "${username}":`, response);
+        // API returns array: [{ user: User }] or []
+        if (Array.isArray(response) && response.length > 0 && response[0]?.user) {
+          console.log(`Successfully got userId: ${response[0].user} for username: ${username}`);
+          return response[0].user;
+        }
+        console.warn(`User not found. Response:`, response);
+        throw new Error(`User "${username}" not found`);
       } catch (error) {
+        console.error(`Error in getUserIdByUsername for "${username}":`, error);
         throw new Error(`User "${username}" not found`);
       }
     },

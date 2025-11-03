@@ -53,7 +53,11 @@
       </div>
 
       <!-- Messaging Panel Overlay -->
-      <div v-if="showMessaging" class="messaging-overlay" @click="closeMessaging">
+      <div
+        v-if="showMessaging"
+        class="messaging-overlay"
+        @click="closeMessaging"
+      >
         <div class="messaging-container" @click.stop>
           <MessagingPanel @close="closeMessaging" />
         </div>
@@ -63,7 +67,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useAuthStore } from "../../stores/authStore.js";
 import { useScheduleStore } from "../../stores/scheduleStore.js";
 import LoginForm from "./LoginForm.vue";
@@ -82,6 +86,13 @@ const showMessaging = ref(false);
 const isAuthenticated = computed(() => authStore.isLoggedIn);
 const username = computed(() => authStore.currentUsername);
 const currentUser = computed(() => authStore.currentUser);
+
+// Watch for authentication changes and reset view when logged out
+watch(isAuthenticated, (newValue) => {
+  if (!newValue) {
+    currentView.value = "login";
+  }
+});
 
 const handleAuthSuccess = async () => {
   // Initialize schedule for the logged-in user
@@ -112,7 +123,7 @@ const handleAuthSuccess = async () => {
 
 const handleLogout = () => {
   authStore.logout();
-  currentView.value = "login";
+  // The watcher will automatically set currentView to "login"
 };
 
 const closeMessaging = () => {
@@ -242,6 +253,7 @@ onMounted(async () => {
 
 .main-content {
   margin-top: 5vh;
+  margin-bottom: 5vh;
   padding: 0;
   min-height: 100vh;
 }
